@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/mnt/d/bogachevv/C++/compressor/ari.cpp
+cstdlib
+-
+cstdio
+-
+cstdint
+-
+stdexcept
+-
+ari.h
+/mnt/d/bogachevv/C++/compressor/ari.h
+
+/mnt/d/bogachevv/C++/compressor/ari.h
+

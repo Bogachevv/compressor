@@ -1,0 +1,16 @@
+C:\Users\dog67\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\222.4167.35\bin\cmake\win\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -S D:\bogachevv\C++\compressor -B D:\bogachevv\C++\compressor\cmake-build-debug-mingw
+-- Building for: NMake Makefiles
+CMake Error at CMakeLists.txt:5 (project):
+  Running
+
+   'nmake' '-?'
+
+  failed with:
+
+   Не удается найти указанный файл
+
+
+CMake Error: CMAKE_C_COMPILER not set, after EnableLanguage
+CMake Error: CMAKE_CXX_COMPILER not set, after EnableLanguage
+-- Configuring incomplete, errors occurred!
+See also "D:/bogachevv/C++/compressor/cmake-build-debug-mingw/CMakeFiles/CMakeOutput.log".
