@@ -8,6 +8,8 @@ set(SOURCE_EXE main.cpp)
 
 set(SOURCE_LIB utils.cpp ari.cpp ppm.cpp)
 
+add_compile_options(-g)
+
 add_library(utils STATIC ${SOURCE_LIB})
 
 add_executable(compress ${SOURCE_EXE})
