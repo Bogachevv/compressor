@@ -59,7 +59,7 @@ int64 read_value(FILE* ifp, int64 bits_c){
 }
 
 int64 get_file_len(FILE* ifp){
-    return 4; //DEBUG
+    return 1040; //DEBUG
 }
 
 void compress_ari(char *ifile, char *ofile) {
@@ -113,6 +113,14 @@ void compress_ari(char *ifile, char *ofile) {
             l += l; h += h + 1;
         }
     }
+
+    ++bits_to_follow;
+    if (l < first_qtr){
+        bits_plus_follow(0, bits_to_follow, ofp);
+    }else{
+        bits_plus_follow(1, bits_to_follow, ofp);
+    }
+
     printf("FILE LEN = %lld", i);
 
     delete[] table;
