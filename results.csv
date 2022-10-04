@@ -1,8 +1,8 @@
-method,file,original_size,compressed_size,conclusion
-ari,test_1,13,13,OK
-ari,test_2,13095,13095,OK
-ari,test_3,226304,226304,OK
-ari,test_4,0,0,OK
-ari,test_5,1000000,1000000,OK
-ari,test_6,1000000,1000000,OK
-ari,test_7,1000000,1000000,OK
+method;file;original_size;compressed_size;conclusionmethod;
+ari;test_1;13;2103;OK
+ari;test_2;13095;;RE2
+ari;test_3;226304;;RE2
+ari;test_4;0;2058;OK
+ari;test_5;1000000;3464481;OK
+ari;test_6;1000000;2058;OK
+ari;test_7;1000000;;RE2

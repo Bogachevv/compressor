@@ -24,7 +24,7 @@ struct compressed_file{
 #define READ_M false
 #define WRITE_M true
 
-    compressed_file(char* path) : buf(0), file_len(0), fd(nullptr){
+    explicit compressed_file(char* path) : buf(0), file_len(0), buf_size(0), is_open(false), mode(false), fd(nullptr){
         this->path = static_cast<char *>(malloc(strlen(path)));
         strcpy(this->path, path);
         table = new int64[MAX_BYTE + 1];
@@ -68,37 +68,51 @@ struct compressed_file{
     }
 
     void flush(){
-        fwrite(&buf, sizeof(buf), 1, fd);
-        buf_size = 0;
+//        buf <<= sizeof(buf) * 8 - buf_size;
+//        fwrite(&buf, sizeof(buf), 1, fd);
+//        buf = 0;
+//        buf_size = 0;
     }
 
     int read_bit(){
-        if ((mode != READ_M) or (!is_open)){
-            throw std::runtime_error("Can't read from file");
-        }
-        if (buf_size == 0){
-            if (!feof(fd)){
-                fread(&buf, sizeof(buf), 1, fd);
-            }else{
-                buf = 0;
-            }
-
-            buf_size = sizeof(buf) * 8;
-        }
-        int bit = buf & 1;
-        buf >>= 1;
+//        if ((mode != READ_M) or (!is_open)){
+//            throw std::runtime_error("Can't read from file");
+//        }
+//        if (buf_size == 0){
+//            if (!feof(fd)){
+//                fread(&buf, sizeof(buf), 1, fd);
+//            }else{
+//                buf = 0;
+//            }
+//
+//            buf_size = sizeof(buf) * 8;
+//        }
+//        int bit = (buf & 0x80) >> 7;
+//        int bit = buf & 1;
+//        buf >>= 1;
+//        --buf_size;
+        bool bit;
+        if (!feof(fd))
+            fread(&bit, sizeof(bool), 1, fd);
+        else
+            bit = false;
+        printf("%d", bit);
         return bit;
     }
 
     void write_bit(int bit){
-        if ((mode != WRITE_M) or (!is_open)){
-            throw std::runtime_error("Can't read from file");
-        }
-        if (buf_size == sizeof(buf_size) * 8){
-            flush();
-        }
-        buf <<= 1;
-        buf += bit;
+        printf("%d", bit);
+//        if ((mode != WRITE_M) or (!is_open)){
+//            throw std::runtime_error("Can't read from file");
+//        }
+//        if (buf_size == sizeof(buf_size) * 8){
+//            flush();
+//        }
+//        buf <<= 1;
+//        buf += bit;
+//        ++buf_size;
+        bool bt = (bit == 1);
+        fwrite(&bt, sizeof(bool), 1, fd);
     }
 
     ~compressed_file(){
@@ -152,7 +166,11 @@ int64 read_bit(FILE* ifp){
 }
 
 int64 read_value(compressed_file& compressed, int64 bits_c){
-    return compressed.read_int(bits_c * 8);
+    int64 res = 0;
+    for (int i = 0; i < bits_c; ++i){
+        res += res + compressed.read_bit();
+    }
+    return res;
 }
 
 int64 get_file_len(FILE* ifp){
@@ -180,7 +198,7 @@ void compress_ari(char *ifile, char *ofile) {
         h = l + (table[ch    ] * range) / table[MAX_BYTE] - 1;
         l = l + (table[ch - 1] * range) / table[MAX_BYTE];
         for (;;){
-            printf("l = %lld(%f)\th = %lld(%f)\n", l, (double)l / WORD_SIZE, h, (double)h / WORD_SIZE);
+//            printf("l = %lld(%f)\th = %lld(%f)\n", l, (double)l / WORD_SIZE, h, (double)h / WORD_SIZE);
             if ((l >= WORD_SIZE) or (h > WORD_SIZE)){
                 throw std::runtime_error("Boundary error");
             }
@@ -206,7 +224,7 @@ void compress_ari(char *ifile, char *ofile) {
         bits_plus_follow(1, bits_to_follow, compressed);
     }
 
-    printf("FILE LEN = %lld", i);
+    printf("\nFILE LEN = %lld", i);
 //    compressed.file_len = i;
 //    compressed.write_header(true);
 
@@ -232,6 +250,7 @@ void decompress_ari(char *ifile, char *ofile) {
     int64 l = 0, h = WORD_SIZE;
     const int64 first_qtr = (h + 1)/ 4, half = first_qtr * 2, third_qtr = first_qtr * 3;
     int64 value = read_value(compressed, (WORD_SIZE == 65535) ? 16 : 32);
+//    printf("value = %lld\n", value);
 
     for (int64 i = 0; i < compressed.file_len; ++i){
         int64 ch = get_char(table, value, l, h);
@@ -241,7 +260,7 @@ void decompress_ari(char *ifile, char *ofile) {
         l = l + (table[ch - 1] * range) / table[MAX_BYTE];
 
         for (;;){
-            printf("value = %lld\tl = %lld\th = %lld\n", value, l, h);
+//            printf("value = %lld\tl = %lld\th = %lld\n", value, l, h);
             if ((l >= WORD_SIZE) or (h > WORD_SIZE) or (value > WORD_SIZE)){
                 fclose(ofp);
                 throw std::runtime_error("Boundary error");
