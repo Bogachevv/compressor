@@ -68,52 +68,44 @@ struct compressed_file{
     }
 
     void flush(){
-//        buf <<= sizeof(buf) * 8 - buf_size;
-//        fwrite(&buf, sizeof(buf), 1, fd);
-//        buf = 0;
-//        buf_size = 0;
+        buf <<= sizeof(buf) * 8 - buf_size;
+//        printf("BUF: %d\n", buf);
+        fwrite(&buf, sizeof(buf), 1, fd);
+        buf = 0;
+        buf_size = 0;
     }
 
     int read_bit(){
-//        if ((mode != READ_M) or (!is_open)){
-//            throw std::runtime_error("Can't read from file");
-//        }
-//        if (buf_size == 0){
-//            if (!feof(fd)){
-//                fread(&buf, sizeof(buf), 1, fd);
-//            }else{
-//                buf = 0;
-//            }
-//
-//            buf_size = sizeof(buf) * 8;
-//        }
-//        int bit = (buf & 0x80) >> 7;
-//        int bit = buf & 1;
-//        buf >>= 1;
-//        --buf_size;
-        bool bit;
-        if (!feof(fd))
-            fread(&bit, sizeof(bool), 1, fd);
-        else
-            bit = false;
-        printf("%d", bit);
+        if ((mode != READ_M) or (!is_open)){
+            throw std::runtime_error("Can't read from file");
+        }
+        if (buf_size == 0){
+            if (!feof(fd)){
+                fread(&buf, sizeof(buf), 1, fd);
+//                printf("BUF: %d\n", buf);
+            }else{
+                buf = 0;
+            }
+            buf_size = sizeof(buf) * 8;
+        }
+        int bit = (buf & 0x80) >> 7;
+        buf <<= 1;
+        --buf_size;
+//        printf("%d", bit);
         return bit;
     }
 
     void write_bit(int bit){
-        printf("%d", bit);
-//        if ((mode != WRITE_M) or (!is_open)){
-//            throw std::runtime_error("Can't read from file");
-//        }
-//        if (buf_size == sizeof(buf_size) * 8){
-//            flush();
-//        }
-//        buf <<= 1;
-//        buf += bit;
-//        ++buf_size;
-        bool bt = (bit == 1);
-        fwrite(&bt, sizeof(bool), 1, fd);
-    }
+        if ((mode != WRITE_M) or (!is_open)){
+            throw std::runtime_error("Can't write to file");
+        }
+//        printf("%d", bit);
+        if (buf_size == sizeof(buf) * 8){
+            flush();
+        }
+        ++buf_size;
+        buf += buf + (bit ? 1 : 0);
+}
 
     ~compressed_file(){
         flush();
@@ -157,24 +149,12 @@ void bits_plus_follow(int bit, int64& bits_to_follow, compressed_file& file){
     }
 }
 
-int64 read_bit(FILE* ifp){
-    int ch = fgetc(ifp);
-    if (ch == EOF){
-        return 0; // or throw exception?
-    }
-    return ch - '0';
-}
-
 int64 read_value(compressed_file& compressed, int64 bits_c){
     int64 res = 0;
     for (int i = 0; i < bits_c; ++i){
         res += res + compressed.read_bit();
     }
     return res;
-}
-
-int64 get_file_len(FILE* ifp){
-    return 1040; //DEBUG
 }
 
 void compress_ari(char *ifile, char *ofile) {
@@ -225,6 +205,7 @@ void compress_ari(char *ifile, char *ofile) {
     }
 
     printf("\nFILE LEN = %lld", i);
+    compressed.flush();
 //    compressed.file_len = i;
 //    compressed.write_header(true);
 
@@ -233,8 +214,6 @@ void compress_ari(char *ifile, char *ofile) {
 }
 
 void decompress_ari(char *ifile, char *ofile) {
-//    const char* path = "input.txt";
-//    auto table = build_table(path);
     FILE *ofp = (FILE *)fopen(ofile, "wb");
 
     auto compressed = compressed_file(ifile);
@@ -243,9 +222,9 @@ void decompress_ari(char *ifile, char *ofile) {
     int64* table = compressed.table;
 
     printf("File len = %lld\n", file_len);
-    for (int i = 0; i <= MAX_BYTE; ++i){
-        printf("%c\t%x\t%llu\n", i, i, table[i]);
-    }
+//    for (int i = 0; i <= MAX_BYTE; ++i){
+//        printf("%c\t%x\t%llu\n", i, i, table[i]);
+//    }
 
     int64 l = 0, h = WORD_SIZE;
     const int64 first_qtr = (h + 1)/ 4, half = first_qtr * 2, third_qtr = first_qtr * 3;
