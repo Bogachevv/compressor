@@ -13,7 +13,9 @@ cstdio
 -
 stdexcept
 -
-string.h
+cstring
+-
+sys/stat.h
 -
 ari.h
 /mnt/d/bogachevv/C++/compressor/ari.h

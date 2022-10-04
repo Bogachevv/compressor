@@ -1,13 +1,16 @@
 #include <cstdlib>
 #include <cstdio>
 #include <stdexcept>
-#include <string.h>
+#include <cstring>
+#include <sys/stat.h>
 
 #include "ari.h"
 
 #define MAX_BYTE 255
-//#define WORD_SIZE 4294967295
-#define WORD_SIZE 65535
+#define WORD_SIZE 4294967295
+//#define WORD_SIZE 65535
+#define MAX_PARITY 65535
+#define MIN_PARITY 128
 
 typedef unsigned long long int64;
 typedef unsigned char byte_t;
@@ -129,6 +132,17 @@ int64* build_table(const char* ifile){
     }
     fclose(ifp);
 
+    for (;;){
+        int64 sum = 0;
+        for (int i = 0; i <= MAX_BYTE; ++i) sum += table[i];
+        if (sum <= MAX_PARITY) break;
+        for (int i = 0; i <= MAX_BYTE; ++i){
+            if (table[i] >= MIN_PARITY){
+                table[i] >>= 1;
+            }
+        }
+    }
+
     for (int64 i = 1; i <= MAX_BYTE; ++i) table[i] += table[i - 1];
 
     return table;
@@ -157,6 +171,23 @@ int64 read_value(compressed_file& compressed, int64 bits_c){
     return res;
 }
 
+int64 get_val(int64* table, int pos){
+    if (pos >= 0){
+        return table[pos];
+    }
+    return 0;
+}
+
+int64 get_file_size(char* path){
+    struct stat st{};
+    int rs = stat(path, &st);
+    if (rs != 0){
+        throw std::runtime_error("Can't read file size");
+    }
+    printf("FILE SIZE = %ld\n", st.st_size);
+    return st.st_size;
+}
+
 void compress_ari(char *ifile, char *ofile) {
     auto table = build_table(ifile);
     FILE *ifp = (FILE *)fopen(ifile, "rb");
@@ -164,7 +195,9 @@ void compress_ari(char *ifile, char *ofile) {
     auto compressed = compressed_file(ofile);
     compressed.open_to_write();
     compressed.table = table;
-    compressed.file_len = table[MAX_BYTE];
+    compressed.file_len = get_file_size(ifile);
+//    compressed.file_len = table[MAX_BYTE];
+    printf("File len = %lld\n", compressed.file_len);
     compressed.write_header();
 
     int64 l = 0, h = WORD_SIZE;
@@ -175,8 +208,8 @@ void compress_ari(char *ifile, char *ofile) {
     while ((ch = fgetc(ifp)) != EOF){
         ++i;
         int64 range = (h - l + 1);
-        h = l + (table[ch    ] * range) / table[MAX_BYTE] - 1;
-        l = l + (table[ch - 1] * range) / table[MAX_BYTE];
+        h = l + (get_val(table, ch    ) * range) / table[MAX_BYTE] - 1;
+        l = l + (get_val(table, ch - 1) * range) / table[MAX_BYTE];
         for (;;){
 //            printf("l = %lld(%f)\th = %lld(%f)\n", l, (double)l / WORD_SIZE, h, (double)h / WORD_SIZE);
             if ((l >= WORD_SIZE) or (h > WORD_SIZE)){
@@ -221,10 +254,22 @@ void decompress_ari(char *ifile, char *ofile) {
     int64 file_len = compressed.file_len;
     int64* table = compressed.table;
 
-    printf("File len = %lld\n", file_len);
-//    for (int i = 0; i <= MAX_BYTE; ++i){
-//        printf("%c\t%x\t%llu\n", i, i, table[i]);
+//    // DEBUG
+//    {
+//        int64 min = table[0];
+//        for (int i = 1; i <= MAX_BYTE; ++i) {
+//            int64 delta = table[i + 1] - table[i];
+//            if (delta < min) min = delta;
+//        }
+//        printf("Min parity = %lld\n", min);
+//        exit(0);
 //    }
+//    // DEBUG
+
+    printf("File len = %lld\n", file_len);
+    for (int i = 0; i <= MAX_BYTE; ++i){
+        printf("%c\t%x\t%llu\n", i, i, table[i]);
+    }
 
     int64 l = 0, h = WORD_SIZE;
     const int64 first_qtr = (h + 1)/ 4, half = first_qtr * 2, third_qtr = first_qtr * 3;
@@ -232,16 +277,20 @@ void decompress_ari(char *ifile, char *ofile) {
 //    printf("value = %lld\n", value);
 
     for (int64 i = 0; i < compressed.file_len; ++i){
+        if (i == 104521){
+            printf("AAAAA\n");
+        }
         int64 ch = get_char(table, value, l, h);
         fprintf(ofp, "%c", (char)ch);
         int64 range = (h - l + 1);
-        h = l + (table[ch    ] * range) / table[MAX_BYTE] - 1;
-        l = l + (table[ch - 1] * range) / table[MAX_BYTE];
+        h = l + (get_val(table, (int)ch    ) * range) / table[MAX_BYTE] - 1;
+        l = l + (get_val(table, (int)ch - 1) * range) / table[MAX_BYTE];
 
         for (;;){
 //            printf("value = %lld\tl = %lld\th = %lld\n", value, l, h);
-            if ((l >= WORD_SIZE) or (h > WORD_SIZE) or (value > WORD_SIZE)){
+            if ((l >= WORD_SIZE) or (h > WORD_SIZE) or (value < l) or (value >= h)){
                 fclose(ofp);
+                printf("i = %lld: l = %lld\th = %lld\tval = %lld\tch = %llx\n",i, l, h, value, ch);
                 throw std::runtime_error("Boundary error");
             }
 
