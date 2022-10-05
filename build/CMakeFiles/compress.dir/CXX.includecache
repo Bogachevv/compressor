@@ -6,19 +6,19 @@
 
 #IncludeRegexTransform: 
 
-/mnt/d/bogachevv/C++/compressor/ari.h
+/mnt/c/bogachevv/c++/compressor/ari.h
 
-/mnt/d/bogachevv/C++/compressor/main.cpp
+/mnt/c/bogachevv/c++/compressor/main.cpp
 utils.h
-/mnt/d/bogachevv/C++/compressor/utils.h
+/mnt/c/bogachevv/c++/compressor/utils.h
 ari.h
-/mnt/d/bogachevv/C++/compressor/ari.h
+/mnt/c/bogachevv/c++/compressor/ari.h
 ppm.h
-/mnt/d/bogachevv/C++/compressor/ppm.h
+/mnt/c/bogachevv/c++/compressor/ppm.h
 
-/mnt/d/bogachevv/C++/compressor/ppm.h
+/mnt/c/bogachevv/c++/compressor/ppm.h
 
-/mnt/d/bogachevv/C++/compressor/utils.h
+/mnt/c/bogachevv/c++/compressor/utils.h
 string
 -
 

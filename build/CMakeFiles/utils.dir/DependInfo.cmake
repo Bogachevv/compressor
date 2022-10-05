@@ -4,9 +4,9 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/mnt/d/bogachevv/C++/compressor/ari.cpp" "/mnt/d/bogachevv/C++/compressor/build/CMakeFiles/utils.dir/ari.cpp.o"
-  "/mnt/d/bogachevv/C++/compressor/ppm.cpp" "/mnt/d/bogachevv/C++/compressor/build/CMakeFiles/utils.dir/ppm.cpp.o"
-  "/mnt/d/bogachevv/C++/compressor/utils.cpp" "/mnt/d/bogachevv/C++/compressor/build/CMakeFiles/utils.dir/utils.cpp.o"
+  "/mnt/c/bogachevv/c++/compressor/ari.cpp" "/mnt/c/bogachevv/c++/compressor/build/CMakeFiles/utils.dir/ari.cpp.o"
+  "/mnt/c/bogachevv/c++/compressor/ppm.cpp" "/mnt/c/bogachevv/c++/compressor/build/CMakeFiles/utils.dir/ppm.cpp.o"
+  "/mnt/c/bogachevv/c++/compressor/utils.cpp" "/mnt/c/bogachevv/c++/compressor/build/CMakeFiles/utils.dir/utils.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

@@ -24,12 +24,16 @@ struct compressed_file{
     char* path;
     bool is_open;
     bool mode; //true if open in write mode
+    bool static_table;
 #define READ_M false
 #define WRITE_M true
 
-    explicit compressed_file(char* path) : buf(0), file_len(0), buf_size(0), is_open(false), mode(false), fd(nullptr){
+    explicit compressed_file(char* path, bool static_table = true) :
+    buf(0), file_len(0), buf_size(0), is_open(false), mode(false), fd(nullptr)
+    {
         this->path = static_cast<char *>(malloc(strlen(path)));
         strcpy(this->path, path);
+        this->static_table = static_table;
         table = new int64[MAX_BYTE + 1];
     }
 
@@ -41,14 +45,26 @@ struct compressed_file{
 
     void write_header(){
         fwrite(&file_len, sizeof(file_len), 1, fd);
-        for (int i = 0; i <= MAX_BYTE; ++i){
-            fwrite(&(table[i]), sizeof(*table), 1, fd);
+        if (static_table) {
+            auto proxy_table = new unsigned short[MAX_BYTE + 1];
+            for (int i = 0; i <= MAX_BYTE; ++i) {
+                proxy_table[i] = (unsigned short) table[i];
+            }
+            fwrite(proxy_table, sizeof(*proxy_table), MAX_BYTE + 1, fd);
+            delete[] proxy_table;
         }
     }
 
     void read_header(){
         fread(&file_len, 8, 1, fd);
-        fread(table, 8, MAX_BYTE + 1, fd);
+        if (static_table) {
+            auto proxy_table = new unsigned short[MAX_BYTE + 1];
+            fread(proxy_table, sizeof(*proxy_table), MAX_BYTE + 1, fd);
+            for (int i = 0; i <= MAX_BYTE; ++i) {
+                table[i] = (int64) proxy_table[i];
+            }
+            delete[] proxy_table;
+        }
     }
 
     void open_to_read(){
@@ -188,15 +204,34 @@ int64 get_file_size(char* path){
     return st.st_size;
 }
 
+#define DELTA 1
+void update_table(int64* table, int ch){
+    if (table[MAX_BYTE] < MAX_PARITY){
+        for (int i = ch; i <= MAX_BYTE; ++i) table[i] += DELTA;
+    }else{
+        for (int i = MAX_BYTE; i > 0; --i) table[i] -= table[i - 1];
+        table[ch] += DELTA;
+        for (int i = 0; i <= MAX_BYTE; ++i) table[i] >>= 1;
+        for (int i = 1; i <= MAX_BYTE; ++i) table[i] += table[i - 1];
+    }
+}
+
+int64* init_table(int64 initial_val){
+    auto table = new int64[MAX_BYTE + 1];
+    table[0] = initial_val;
+    for (int i = 1; i <= MAX_BYTE; ++i) table[i] = table[i - 1] + initial_val;
+    return table;
+}
+
 void compress_ari(char *ifile, char *ofile) {
-    auto table = build_table(ifile);
+//    auto table = build_table(ifile);
     FILE *ifp = (FILE *)fopen(ifile, "rb");
 
-    auto compressed = compressed_file(ofile);
+    auto compressed = compressed_file(ofile, false);
     compressed.open_to_write();
-    compressed.table = table;
+    compressed.table = init_table(1);
+    auto table = compressed.table;
     compressed.file_len = get_file_size(ifile);
-//    compressed.file_len = table[MAX_BYTE];
     printf("File len = %lld\n", compressed.file_len);
     compressed.write_header();
 
@@ -210,10 +245,11 @@ void compress_ari(char *ifile, char *ofile) {
         int64 range = (h - l + 1);
         h = l + (get_val(table, ch    ) * range) / table[MAX_BYTE] - 1;
         l = l + (get_val(table, ch - 1) * range) / table[MAX_BYTE];
+        update_table(table, ch);
         for (;;){
 //            printf("l = %lld(%f)\th = %lld(%f)\n", l, (double)l / WORD_SIZE, h, (double)h / WORD_SIZE);
             if ((l >= WORD_SIZE) or (h > WORD_SIZE)){
-                throw std::runtime_error("Boundary error");
+//                throw std::runtime_error("Boundary error");
             }
             if (h < half){
                 bits_plus_follow(0, bits_to_follow, compressed);
@@ -239,8 +275,10 @@ void compress_ari(char *ifile, char *ofile) {
 
     printf("\nFILE LEN = %lld", i);
     compressed.flush();
-//    compressed.file_len = i;
-//    compressed.write_header(true);
+
+    for (int i = 0; i <= MAX_BYTE; ++i){
+        printf("%c\t%d\t%lld\n", (char)i, i, table[i]);
+    }
 
     delete[] table;
     fclose(ifp);
@@ -249,8 +287,9 @@ void compress_ari(char *ifile, char *ofile) {
 void decompress_ari(char *ifile, char *ofile) {
     FILE *ofp = (FILE *)fopen(ofile, "wb");
 
-    auto compressed = compressed_file(ifile);
+    auto compressed = compressed_file(ifile, false);
     compressed.open_to_read();
+    compressed.table = init_table(1);
     int64 file_len = compressed.file_len;
     int64* table = compressed.table;
 
@@ -277,21 +316,18 @@ void decompress_ari(char *ifile, char *ofile) {
 //    printf("value = %lld\n", value);
 
     for (int64 i = 0; i < compressed.file_len; ++i){
-        if (i == 104521){
-            printf("AAAAA\n");
-        }
         int64 ch = get_char(table, value, l, h);
         fprintf(ofp, "%c", (char)ch);
         int64 range = (h - l + 1);
         h = l + (get_val(table, (int)ch    ) * range) / table[MAX_BYTE] - 1;
         l = l + (get_val(table, (int)ch - 1) * range) / table[MAX_BYTE];
-
+        update_table(table, (int)ch);
         for (;;){
 //            printf("value = %lld\tl = %lld\th = %lld\n", value, l, h);
             if ((l >= WORD_SIZE) or (h > WORD_SIZE) or (value < l) or (value >= h)){
-                fclose(ofp);
-                printf("i = %lld: l = %lld\th = %lld\tval = %lld\tch = %llx\n",i, l, h, value, ch);
-                throw std::runtime_error("Boundary error");
+//                fclose(ofp);
+//                printf("i = %lld: l = %lld\th = %lld\tval = %lld\tch = %llx\n",i, l, h, value, ch);
+//                throw std::runtime_error("Boundary error");
             }
 
             if (h < half){}
@@ -308,6 +344,10 @@ void decompress_ari(char *ifile, char *ofile) {
             value += value + compressed.read_bit();
         }
 
+    }
+
+    for (int i = 0; i <= MAX_BYTE; ++i){
+        printf("%c\t%d\t%lld\n", (char)i, i, table[i]);
     }
 
     fclose(ofp);

@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/mnt/d/bogachevv/C++/compressor/ari.cpp
+/mnt/c/bogachevv/c++/compressor/ari.cpp
 cstdlib
 -
 cstdio
@@ -18,7 +18,7 @@ cstring
 sys/stat.h
 -
 ari.h
-/mnt/d/bogachevv/C++/compressor/ari.h
+/mnt/c/bogachevv/c++/compressor/ari.h
 
-/mnt/d/bogachevv/C++/compressor/ari.h
+/mnt/c/bogachevv/c++/compressor/ari.h
 

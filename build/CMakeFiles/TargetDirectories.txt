@@ -1,4 +1,4 @@
-/mnt/d/bogachevv/C++/compressor/build/CMakeFiles/rebuild_cache.dir
-/mnt/d/bogachevv/C++/compressor/build/CMakeFiles/edit_cache.dir
-/mnt/d/bogachevv/C++/compressor/build/CMakeFiles/compress.dir
-/mnt/d/bogachevv/C++/compressor/build/CMakeFiles/utils.dir
+/mnt/c/bogachevv/c++/compressor/build/CMakeFiles/rebuild_cache.dir
+/mnt/c/bogachevv/c++/compressor/build/CMakeFiles/edit_cache.dir
+/mnt/c/bogachevv/c++/compressor/build/CMakeFiles/compress.dir
+/mnt/c/bogachevv/c++/compressor/build/CMakeFiles/utils.dir

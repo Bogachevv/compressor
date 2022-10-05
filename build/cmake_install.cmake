@@ -1,4 +1,4 @@
-# Install script for directory: /mnt/d/bogachevv/C++/compressor
+# Install script for directory: /mnt/c/bogachevv/c++/compressor
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/mnt/d/bogachevv/C++/compressor/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/mnt/c/bogachevv/c++/compressor/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

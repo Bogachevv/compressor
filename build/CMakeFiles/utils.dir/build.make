@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /mnt/d/bogachevv/C++/compressor
+CMAKE_SOURCE_DIR = /mnt/c/bogachevv/c++/compressor
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /mnt/d/bogachevv/C++/compressor/build
+CMAKE_BINARY_DIR = /mnt/c/bogachevv/c++/compressor/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/utils.dir/depend.make
@@ -59,42 +59,42 @@ include CMakeFiles/utils.dir/flags.make
 
 CMakeFiles/utils.dir/utils.cpp.o: CMakeFiles/utils.dir/flags.make
 CMakeFiles/utils.dir/utils.cpp.o: ../utils.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/d/bogachevv/C++/compressor/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/utils.dir/utils.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/utils.dir/utils.cpp.o -c /mnt/d/bogachevv/C++/compressor/utils.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/bogachevv/c++/compressor/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/utils.dir/utils.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/utils.dir/utils.cpp.o -c /mnt/c/bogachevv/c++/compressor/utils.cpp
 
 CMakeFiles/utils.dir/utils.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/utils.dir/utils.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/d/bogachevv/C++/compressor/utils.cpp > CMakeFiles/utils.dir/utils.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/c/bogachevv/c++/compressor/utils.cpp > CMakeFiles/utils.dir/utils.cpp.i
 
 CMakeFiles/utils.dir/utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/utils.dir/utils.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/d/bogachevv/C++/compressor/utils.cpp -o CMakeFiles/utils.dir/utils.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/c/bogachevv/c++/compressor/utils.cpp -o CMakeFiles/utils.dir/utils.cpp.s
 
 CMakeFiles/utils.dir/ari.cpp.o: CMakeFiles/utils.dir/flags.make
 CMakeFiles/utils.dir/ari.cpp.o: ../ari.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/d/bogachevv/C++/compressor/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/utils.dir/ari.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/utils.dir/ari.cpp.o -c /mnt/d/bogachevv/C++/compressor/ari.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/bogachevv/c++/compressor/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/utils.dir/ari.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/utils.dir/ari.cpp.o -c /mnt/c/bogachevv/c++/compressor/ari.cpp
 
 CMakeFiles/utils.dir/ari.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/utils.dir/ari.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/d/bogachevv/C++/compressor/ari.cpp > CMakeFiles/utils.dir/ari.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/c/bogachevv/c++/compressor/ari.cpp > CMakeFiles/utils.dir/ari.cpp.i
 
 CMakeFiles/utils.dir/ari.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/utils.dir/ari.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/d/bogachevv/C++/compressor/ari.cpp -o CMakeFiles/utils.dir/ari.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/c/bogachevv/c++/compressor/ari.cpp -o CMakeFiles/utils.dir/ari.cpp.s
 
 CMakeFiles/utils.dir/ppm.cpp.o: CMakeFiles/utils.dir/flags.make
 CMakeFiles/utils.dir/ppm.cpp.o: ../ppm.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/d/bogachevv/C++/compressor/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/utils.dir/ppm.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/utils.dir/ppm.cpp.o -c /mnt/d/bogachevv/C++/compressor/ppm.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/bogachevv/c++/compressor/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/utils.dir/ppm.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/utils.dir/ppm.cpp.o -c /mnt/c/bogachevv/c++/compressor/ppm.cpp
 
 CMakeFiles/utils.dir/ppm.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/utils.dir/ppm.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/d/bogachevv/C++/compressor/ppm.cpp > CMakeFiles/utils.dir/ppm.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/c/bogachevv/c++/compressor/ppm.cpp > CMakeFiles/utils.dir/ppm.cpp.i
 
 CMakeFiles/utils.dir/ppm.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/utils.dir/ppm.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/d/bogachevv/C++/compressor/ppm.cpp -o CMakeFiles/utils.dir/ppm.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/c/bogachevv/c++/compressor/ppm.cpp -o CMakeFiles/utils.dir/ppm.cpp.s
 
 # Object files for target utils
 utils_OBJECTS = \
@@ -110,7 +110,7 @@ libutils.a: CMakeFiles/utils.dir/ari.cpp.o
 libutils.a: CMakeFiles/utils.dir/ppm.cpp.o
 libutils.a: CMakeFiles/utils.dir/build.make
 libutils.a: CMakeFiles/utils.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/d/bogachevv/C++/compressor/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX static library libutils.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/c/bogachevv/c++/compressor/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX static library libutils.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/utils.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/utils.dir/link.txt --verbose=$(VERBOSE)
 
@@ -124,6 +124,6 @@ CMakeFiles/utils.dir/clean:
 .PHONY : CMakeFiles/utils.dir/clean
 
 CMakeFiles/utils.dir/depend:
-	cd /mnt/d/bogachevv/C++/compressor/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /mnt/d/bogachevv/C++/compressor /mnt/d/bogachevv/C++/compressor /mnt/d/bogachevv/C++/compressor/build /mnt/d/bogachevv/C++/compressor/build /mnt/d/bogachevv/C++/compressor/build/CMakeFiles/utils.dir/DependInfo.cmake --color=$(COLOR)
+	cd /mnt/c/bogachevv/c++/compressor/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /mnt/c/bogachevv/c++/compressor /mnt/c/bogachevv/c++/compressor /mnt/c/bogachevv/c++/compressor/build /mnt/c/bogachevv/c++/compressor/build /mnt/c/bogachevv/c++/compressor/build/CMakeFiles/utils.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/utils.dir/depend
 
