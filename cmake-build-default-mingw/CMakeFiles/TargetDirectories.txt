@@ -1,4 +1,0 @@
-D:/bogachevv/C++/compressor/cmake-build-default-mingw/CMakeFiles/utils.dir
-D:/bogachevv/C++/compressor/cmake-build-default-mingw/CMakeFiles/compress.dir
-D:/bogachevv/C++/compressor/cmake-build-default-mingw/CMakeFiles/edit_cache.dir
-D:/bogachevv/C++/compressor/cmake-build-default-mingw/CMakeFiles/rebuild_cache.dir

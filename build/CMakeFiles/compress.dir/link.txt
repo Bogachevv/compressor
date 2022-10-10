@@ -1,1 +1,0 @@
-/usr/bin/c++    -rdynamic CMakeFiles/compress.dir/main.cpp.o  -o compress  libutils.a -lm 

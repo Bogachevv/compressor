@@ -1,4 +1,0 @@
-C:\Users\dog67\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\222.4167.35\bin\cmake\win\bin\cmake.exe -DCMAKE_MAKE_PROGRAM=C:/Users/dog67/AppData/Local/JetBrains/Toolbox/apps/CLion/ch-0/222.4167.35/bin/ninja/win/ninja.exe -G Ninja -S D:\bogachevv\C++\compressor -B D:\bogachevv\C++\compressor\cmake-build-default-mingw
--- Configuring done
--- Generating done
--- Build files have been written to: D:/bogachevv/C++/compressor/cmake-build-default-mingw

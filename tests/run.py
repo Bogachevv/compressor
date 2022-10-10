@@ -103,7 +103,7 @@ def save_results(results, filename=FILE_RESULTS):
               COMPRESSED_SIZE,
               CONCLUSION]
     with open(filename, 'w', newline='') as resfile:
-        writer = csv.writer(resfile)
+        writer = csv.writer(resfile, delimiter=';')
         writer.writerow(header)
         resfile.flush()
         for row in results:
