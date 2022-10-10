@@ -9,9 +9,9 @@
 #define MAX_BYTE 255
 #define WORD_SIZE 4294967295
 //#define WORD_SIZE 65535
-#define MAX_PARITY 65535
-#define MIN_PARITY 32
-#define DELTA 16
+#define MAX_PARITY 4294967295
+#define MIN_PARITY 2097152
+#define DELTA 64
 
 typedef unsigned long long int64;
 typedef unsigned char byte_t;
@@ -279,7 +279,7 @@ void compress_ari(char *ifile, char *ofile) {
     compressed.flush();
 
     for (int chr = 0; chr <= MAX_BYTE; ++chr){
-        printf("%c\t%d\t%lld\n", (char)chr, chr, table[chr]);
+        printf("%3d %10lld\n", chr, table[chr]);
     }
 
     fclose(ifp);
