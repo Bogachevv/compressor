@@ -186,9 +186,9 @@ int64* build_table(const char* ifile){
 }
 
 int get_char(const int64* table, int64 val, int64 l, int64 h){
-    int64 tmp = ((val - l + 1) * table[MAX_BYTE] - 1);
+    int64 tmp = (val - l + 1) * table[MAX_BYTE];
     int i = 0;
-    for (; (i <= MAX_BYTE) and (table[i] * (h - l) <= tmp); ++i){}
+    for (; (i <= MAX_BYTE) and (table[i] * (h - l + 1) < tmp); ++i){}
     return i;
 }
 
@@ -312,7 +312,7 @@ void decompress_ari(char *ifile, char *ofile) {
 //            printf("value = %lld\tl = %lld\th = %lld\n", value, l, h);
 //            if (value < l) value = l;
 //            if (value >= h) value = h - 1;
-            if ((l >= WORD_SIZE) or (h > WORD_SIZE) or (value < l) or (value >= h)){
+            if ((l >= WORD_SIZE) or (h > WORD_SIZE) or (value < l) or (value > h)){
                 fclose(ofp);
                 printf("i = %lld: l = %lld\th = %lld\tval = %lld\tch = %llx\n",i, l, h, value, ch);
                 throw std::runtime_error("Boundary error");
