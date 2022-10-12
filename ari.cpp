@@ -10,7 +10,9 @@
 #define MAX_BYTE 255
 #define WORD_SIZE 4294967295
 //#define WORD_SIZE 65535
-#define MAX_PARITY 4294967295
+#define MAX_PARITY 2147483648
+//#define MIN_PARITY 2
+//#define DELTA 524288
 
 
 typedef unsigned long long int64;
@@ -252,7 +254,11 @@ void compress_ari(char *ifile, char *ofile) {
         compressed.update_dynamic_table(ch);
         for (;;){
             if ((l >= WORD_SIZE) or (h > WORD_SIZE)){
-                throw std::runtime_error("Boundary error");
+                char err_msg[256];
+                sprintf(err_msg,
+                        "Compressor error: boundary error\n"
+                        "l = %lld\th = %lld\tch = %d\n", l, h, ch);
+                throw std::runtime_error(err_msg);
             }
             if (h < half){
                 bits_plus_follow(0, bits_to_follow, compressed);

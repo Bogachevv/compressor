@@ -1,5 +1,8 @@
 import sys
 import os
+
+import matplotlib.pyplot as plt
+import matplotlib.scale
 import numpy as np
 
 
@@ -15,24 +18,42 @@ def write_settings(delta: int, min_parity: int):
         f.write(f"#define DELTA {delta}\n")
 
 
-def calc_compression(delta: int, min_parity: int) -> float:
+def calc_compression(delta: int, min_parity: int, path: str = "input.txt") -> float:
     os.chdir("../build")
-    write_settings(128, 2)
-    os.system('make')
-    stream = os.popen('./compress --output output.txt')
+    write_settings(delta, min_parity)
+    stream = os.popen('make')
+    stream.read()
+    stream = os.popen(f'./compress --input {path} --output output.txt')
     output = stream.read()
-    print(output)
+    # print(output)
     compressed_size = get_file_size('output.txt')
-    raw_size = get_file_size('input.txt')
-    return compressed_size / raw_size
+    raw_size = get_file_size(path)
+    # return compressed_size / raw_size
+    return compressed_size
+
+
+def mean_compression(delta: int, files) -> float:
+    return sum(calc_compression(delta, 2, path) for path in files)
 
 
 def main():
-    x = np.logspace(2, 16, num=14, base=2, dtype=int)
-    print(x)
-    compression = calc_compression(1024, 2)
-    print(f"{compression=}")
+    min_delta_pow = 2
+    max_delta_pow = 26
+    x = np.logspace(min_delta_pow, max_delta_pow, num=max_delta_pow - min_delta_pow + 1, base=2, dtype=int)
+
+    files = [f'../public_tests/0{i}_test_file_input/test_{i+1}' for i in range(2, 7) if i != 3]
+    y = np.array([mean_compression(delta, files) for delta in x], dtype=float)
+    print(*zip(x, y), sep='\n')
+    plt.xlabel("Delta")
+    plt.ylabel("Compression")
+    plt.xscale("log", base=2)
+    plt.yscale("linear")
+    # plt.ylim(min_y - 0.1, max_y + 0.1)
+
+    plt.plot(x, y)
+    plt.show()
 
 
 if __name__ == '__main__':
     main()
+

@@ -1,2 +1,2 @@
 #define MIN_PARITY 2
-#define DELTA 128
+#define DELTA 67108864
