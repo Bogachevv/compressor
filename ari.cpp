@@ -10,8 +10,8 @@
 #define WORD_SIZE 4294967295
 //#define WORD_SIZE 65535
 #define MAX_PARITY 4294967295
-#define MIN_PARITY 2097152
-#define DELTA 64
+#define MIN_PARITY 2
+#define DELTA 96
 
 typedef unsigned long long int64;
 typedef unsigned char byte_t;
@@ -108,6 +108,7 @@ struct compressed_file{
     }
 
     void flush(){
+        if (buf_size == 0) return;
         buf <<= sizeof(buf) * 8 - buf_size;
 //        printf("BUF: %d\n", buf);
         fwrite(&buf, sizeof(buf), 1, fd);
@@ -268,19 +269,21 @@ void compress_ari(char *ifile, char *ofile) {
         }
     }
 
-    ++bits_to_follow;
-    if (l < first_qtr){
-        bits_plus_follow(0, bits_to_follow, compressed);
-    }else{
-        bits_plus_follow(1, bits_to_follow, compressed);
+    if (i > 0){
+        ++bits_to_follow;
+        if (l < first_qtr){
+            bits_plus_follow(0, bits_to_follow, compressed);
+        }else{
+            bits_plus_follow(1, bits_to_follow, compressed);
+        }
     }
 
     printf("\nFILE LEN = %lld", i);
     compressed.flush();
 
-    for (int chr = 0; chr <= MAX_BYTE; ++chr){
-        printf("%3d %10lld\n", chr, table[chr]);
-    }
+//    for (int chr = 0; chr <= MAX_BYTE; ++chr){
+//        printf("%3d %10lld\n", chr, table[chr]);
+//    }
 
     fclose(ifp);
 }

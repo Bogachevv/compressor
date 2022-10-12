@@ -1,8 +1,8 @@
 method;file;original_size;compressed_size;conclusion
-ari;test_1;13;23;OK
-ari;test_2;13095;7919;OK
-ari;test_3;226304;;RE2
-ari;test_4;0;10;OK
-ari;test_5;1000000;434650;OK
-ari;test_6;1000000;1985;OK
-ari;test_7;1000000;379835;OK
+ari;test_1;14;24;OK
+ari;test_2;13245;8057;OK
+ari;test_3;226304;193272;OK
+ari;test_4;0;8;OK
+ari;test_5;1000000;432466;OK
+ari;test_6;1000000;22;OK
+ari;test_7;1000000;499166;OK
