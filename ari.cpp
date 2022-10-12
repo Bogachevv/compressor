@@ -5,13 +5,13 @@
 #include <sys/stat.h>
 
 #include "ari.h"
+#include "settings.h"  // DELETE before send
 
 #define MAX_BYTE 255
 #define WORD_SIZE 4294967295
 //#define WORD_SIZE 65535
 #define MAX_PARITY 4294967295
-#define MIN_PARITY 2
-#define DELTA 96
+
 
 typedef unsigned long long int64;
 typedef unsigned char byte_t;
@@ -234,6 +234,7 @@ void compress_ari(char *ifile, char *ofile) {
     compressed.open_to_write();
     compressed.init_dynamic_table(2);
     compressed.file_len = get_file_size(ifile);
+    printf("Delta: %d\n", DELTA);
     printf("File len = %lld\n", compressed.file_len);
     compressed.write_header();
 
@@ -250,7 +251,6 @@ void compress_ari(char *ifile, char *ofile) {
         l = l + (get_val(table, ch - 1) * range) / table[MAX_BYTE];
         compressed.update_dynamic_table(ch);
         for (;;){
-//            printf("l = %lld(%f)\th = %lld(%f)\n", l, (double)l / WORD_SIZE, h, (double)h / WORD_SIZE);
             if ((l >= WORD_SIZE) or (h > WORD_SIZE)){
                 throw std::runtime_error("Boundary error");
             }
@@ -278,13 +278,7 @@ void compress_ari(char *ifile, char *ofile) {
         }
     }
 
-    printf("\nFILE LEN = %lld", i);
     compressed.flush();
-
-//    for (int chr = 0; chr <= MAX_BYTE; ++chr){
-//        printf("%3d %10lld\n", chr, table[chr]);
-//    }
-
     fclose(ifp);
 }
 
