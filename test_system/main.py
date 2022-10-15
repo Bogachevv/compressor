@@ -28,8 +28,8 @@ def calc_compression(delta: int, min_parity: int, path: str = "input.txt") -> fl
     # print(output)
     compressed_size = get_file_size('output.txt')
     raw_size = get_file_size(path)
-    # return compressed_size / raw_size
-    return compressed_size
+    return compressed_size / raw_size
+    # return compressed_size
 
 
 def mean_compression(delta: int, files) -> float:
@@ -38,20 +38,22 @@ def mean_compression(delta: int, files) -> float:
 
 def main():
     min_delta_pow = 2
-    max_delta_pow = 26
+    max_delta_pow = 29
     x = np.logspace(min_delta_pow, max_delta_pow, num=max_delta_pow - min_delta_pow + 1, base=2, dtype=int)
 
-    files = [f'../public_tests/0{i}_test_file_input/test_{i+1}' for i in range(2, 7) if i != 3]
-    y = np.array([mean_compression(delta, files) for delta in x], dtype=float)
-    print(*zip(x, y), sep='\n')
-    plt.xlabel("Delta")
-    plt.ylabel("Compression")
-    plt.xscale("log", base=2)
-    plt.yscale("linear")
-    # plt.ylim(min_y - 0.1, max_y + 0.1)
-
-    plt.plot(x, y)
-    plt.show()
+    # files = [f'../public_tests/0{i}_test_file_input/test_{i+1}' for i in range(1, 7) if i != 3]
+    files = [f'../public_tests/0{4}_test_file_input/test_{5}']
+    for path in files:
+        y = np.array([calc_compression(delta, 2, path) for delta in x], dtype=float)
+        print(*zip(x, y), sep='\n')
+        # plt.ylim(min_y - 0.1, max_y + 0.1)
+        plt.xlabel("Delta")
+        plt.ylabel("Compression")
+        plt.xscale("log", base=2)
+        plt.yscale("linear")
+        plt.title(f"{path}")
+        plt.plot(x, y, 'm')
+        plt.show()
 
 
 if __name__ == '__main__':

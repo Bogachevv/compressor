@@ -5,14 +5,14 @@
 #include <sys/stat.h>
 
 #include "ari.h"
-#include "settings.h"  // DELETE before send
+//#include "settings.h"  // DELETE before send
 
 #define MAX_BYTE 255
 #define WORD_SIZE 4294967295
 //#define WORD_SIZE 65535
 #define MAX_PARITY 2147483648
-//#define MIN_PARITY 2
-//#define DELTA 524288
+#define MIN_PARITY 2
+#define DELTA 2097152
 
 
 typedef unsigned long long int64;
