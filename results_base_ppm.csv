@@ -1,0 +1,11 @@
+method;file;original_size;compressed_size;conclusion
+ppm;test_1;13;22;OK
+ppm;test_2;13095;12908;OK
+ppm;test_3;226304;240132;OK
+ppm;test_4;0;8;OK
+ppm;test_5;1000000;64;OK
+ppm;test_6;1000000;55;OK
+ppm;test_7;1000000;5335;OK
+;;;;
+;;3239412;258524;
+;;;0,079805841;
