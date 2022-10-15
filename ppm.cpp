@@ -14,6 +14,7 @@
 #define MAX_PARITY 2147483648
 #define MIN_PARITY 2
 #define DELTA 2097152
+#define SHAPE 0
 
 namespace ppm{
 
@@ -22,27 +23,36 @@ namespace ppm{
         uint8_t buf;
         int buf_size;
         uint64_t file_len;
-        uint64_t** table;
+        void** table;
         int model_shape;
         char* path;
         bool is_open;
         bool mode; //true if open in write mode
         uint64_t delta;
-        int prev_ch;
+        int* prev_ch_seq;
 #define READ_M false
 #define WRITE_M true
 
-        explicit compressed_file(char* path) :
+        explicit compressed_file(char* path, int model_shape) :
                 buf(0), file_len(0), buf_size(0), is_open(false),
-                mode(false), fd(nullptr), delta(1), prev_ch(0), model_shape(1)
+                mode(false), fd(nullptr), delta(1), model_shape(model_shape)
         {
             this->path = static_cast<char *>(malloc(strlen(path)));
             strcpy(this->path, path);
             table = nullptr;
+            prev_ch_seq = new int[model_shape];
         }
 
         void init_dynamic_table(){
-            this->table = new uint64_t*[MAX_BYTE + 1];
+            if (model_shape == 0){
+                const uint64_t initial_val = 2;
+                auto tmp_table = new uint64_t[MAX_BYTE + 1];
+                tmp_table[0] = initial_val;
+                for (int i = 1; i <= MAX_BYTE; ++i) tmp_table[i] = tmp_table[i - 1] + initial_val;
+                this->table = (void **)tmp_table;
+                return;
+            }
+            this->table = new void*[MAX_BYTE + 1];
             for (int i = 1; i <= MAX_BYTE; ++i) table[i] = nullptr;
         }
 
@@ -53,21 +63,42 @@ namespace ppm{
             for (int i = 1; i <= MAX_BYTE; ++i) table[i] += table[i - 1]; // composition
         }
 
-        uint64_t* get_table(int ch){
-            if (table[ch] == nullptr){
-                const uint64_t initial_val = 2;
-                table[ch] = new uint64_t[MAX_BYTE + 1];
-                table[ch][0] = initial_val;
-                for (int i = 1; i <= MAX_BYTE; ++i) table[ch][i] = table[ch][i - 1] + initial_val;
+        uint64_t* get_table(){
+            if (model_shape == 0) return (uint64_t*)table;
+            void** table_ptr = table;
+            for (int i = 0; i < model_shape - 1; ++i){
+                if (table_ptr[prev_ch_seq[i]] == nullptr){
+                    //init_pointer_table
+                    table_ptr[prev_ch_seq[i]] = new void*[MAX_BYTE+1];
+                    void** tmp_ptr = (void**)table_ptr[prev_ch_seq[i]];
+                    for (int j = 0; j <= MAX_BYTE; ++j) tmp_ptr[j] = nullptr;
+                }
+                table_ptr = (void**)(table_ptr[prev_ch_seq[i]]);
             }
-            return table[ch];
+            if (table_ptr[prev_ch_seq[model_shape - 1]] == nullptr){
+                //init_int64_table
+                auto tmp_ptr = new uint64_t[MAX_BYTE+1];
+                const int initial_val = 2;
+                tmp_ptr[0] = initial_val;
+                for (int j = 1; j <= MAX_BYTE; ++j) tmp_ptr[j] = tmp_ptr[j - 1] + initial_val;
+                table_ptr[prev_ch_seq[model_shape - 1]] = (void**)tmp_ptr;
+            }
+            table_ptr = (void**)(table_ptr[prev_ch_seq[model_shape - 1]]);
+            return (uint64_t*)table_ptr;
+        }
+
+        void add_prev_ch(int ch){
+            for (int i = 0; i < model_shape - 1; ++i){
+                prev_ch_seq[i] = prev_ch_seq[i + 1];
+            }
+            prev_ch_seq[model_shape - 1] = ch;
         }
 
         void update_dynamic_table(int ch){
-            auto table_ptr = get_table(prev_ch);
+            auto table_ptr = get_table();
             for (int i = ch; i <= MAX_BYTE; ++i) table_ptr[i] += delta;
             if (table_ptr[MAX_BYTE] < MAX_PARITY) strict_table(table_ptr);
-            prev_ch = ch;
+            if (model_shape > 0) add_prev_ch(ch);
         }
 
         void write_header(){
@@ -135,7 +166,7 @@ namespace ppm{
         }
 
         int get_char(uint64_t val, uint64_t l, uint64_t h){
-            auto table_ptr = get_table(prev_ch);
+            auto table_ptr = get_table();
             uint64_t tmp = (val - l + 1) * table_ptr[MAX_BYTE];
             int i = 0;
             for (; (i <= MAX_BYTE) and (table_ptr[i] * (h - l + 1) < tmp); ++i){}
@@ -187,7 +218,7 @@ namespace ppm{
 
 void compress_ppm(char *ifile, char *ofile) {
     FILE *ifp = (FILE *)fopen(ifile, "rb");
-    auto compressed = ppm::compressed_file(ofile);
+    auto compressed = ppm::compressed_file(ofile, SHAPE);
     compressed.delta = DELTA;
     compressed.open_to_write();
     compressed.init_dynamic_table();
@@ -203,7 +234,8 @@ void compress_ppm(char *ifile, char *ofile) {
     int ch;
     while ((ch = fgetc(ifp)) != EOF){
         ++i;
-        auto table_ptr = compressed.get_table(compressed.prev_ch);
+//        printf("%c\n", ch);
+        auto table_ptr = compressed.get_table();
         uint64_t range = (h - l + 1);
         h = l + (ppm::get_val(table_ptr, ch    ) * range) / table_ptr[MAX_BYTE] - 1;
         l = l + (ppm::get_val(table_ptr, ch - 1) * range) / table_ptr[MAX_BYTE];
@@ -247,7 +279,7 @@ void compress_ppm(char *ifile, char *ofile) {
 void decompress_ppm(char *ifile, char *ofile) {
     FILE *ofp = (FILE *)fopen(ofile, "wb");
 
-    auto compressed = ppm::compressed_file(ifile);
+    auto compressed = ppm::compressed_file(ifile, SHAPE);
     compressed.open_to_read();
     compressed.delta = DELTA;
     compressed.init_dynamic_table();
@@ -262,7 +294,7 @@ void decompress_ppm(char *ifile, char *ofile) {
     for (uint64_t i = 0; i < compressed.file_len; ++i){
         uint64_t ch = compressed.get_char(value, l, h);
         fprintf(ofp, "%c", (char)ch);
-        auto table_ptr = compressed.get_table(compressed.prev_ch);
+        auto table_ptr = compressed.get_table();
         uint64_t range = (h - l + 1);
         h = l + (ppm::get_val(table_ptr, (int)ch    ) * range) / table_ptr[MAX_BYTE] - 1;
         l = l + (ppm::get_val(table_ptr, (int)ch - 1) * range) / table_ptr[MAX_BYTE];
