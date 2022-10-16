@@ -38,13 +38,13 @@ def mean_compression(delta: int, files) -> float:
 
 
 def main():
-    min_delta_pow = 1
-    max_delta_pow = 12
-    deltas = np.logspace(min_delta_pow, max_delta_pow, num=6, base=2, dtype=int)
+    min_delta_pow = 4
+    max_delta_pow = 14
+    deltas = np.logspace(min_delta_pow, max_delta_pow, num=7, base=2, dtype=int)
     x = np.linspace(0, 8, num=7, dtype=int)
 
     files = [f'../public_tests/0{i}_test_file_input/test_{i+1}' for i in range(1, 7) if i != 3]
-    files += ['./war_and_peace.txt', 'idiot.txt']
+    files += ['./war_and_peace.txt', 'idiot.txt', 'big_binary']
     # path = f'../public_tests/0{6}_test_file_input/test_{7}'
     colors = ['r', 'g', 'b', 'k', 'm', 'y', 'c']
     # delta = 2 ** 18

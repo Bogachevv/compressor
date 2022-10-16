@@ -6,15 +6,15 @@
 #include <cstdint>
 
 #include "ppm.h"
-#include "settings.h"  // DELETE before send
+//#include "settings.h"  // DELETE before send
 
 #define MAX_BYTE 255
 #define WORD_SIZE 4294967295
 //#define WORD_SIZE 65535
-#define MAX_PARITY 32768
-//#define MIN_PARITY 2
-//#define DELTA 256
-//#define SHAPE 5
+//#define MAX_PARITY 8388608
+#define MIN_PARITY 2
+#define DELTA 1625
+#define SHAPE 2
 
 namespace ppm{
     struct compressed_file{
@@ -55,10 +55,10 @@ namespace ppm{
         }
 
         void strict_table(uint16_t *table_ptr){
-            for (int i = MAX_BYTE; i > 0; --i) table_ptr[i] -= table_ptr[i - 1]; // decomposition
+//            for (int i = MAX_BYTE; i > 0; --i) table_ptr[i] -= table_ptr[i - 1]; // decomposition
             for (int i = 0; i <= MAX_BYTE; ++i)
                 if (table_ptr[i] >= 2 * MIN_PARITY) table_ptr[i] = table_ptr[i] / 2;
-            for (int i = 1; i <= MAX_BYTE; ++i) table_ptr[i] += table_ptr[i - 1]; // composition
+//            for (int i = 1; i <= MAX_BYTE; ++i) table_ptr[i] += table_ptr[i - 1]; // composition
         }
 
         uint16_t* get_table(){
@@ -86,6 +86,12 @@ namespace ppm{
             return (uint16_t*)table_ptr;
         }
 
+        void load_table(uint64_t *table_ptr){
+            auto base_table = get_table();
+            table_ptr[0] = base_table[0];
+            for (int i = 1; i <= MAX_BYTE; ++i) table_ptr[i] = table_ptr[i - 1] + base_table[i];
+        }
+
         void add_prev_ch(int ch){
             for (int i = 0; i < model_shape - 1; ++i){
                 prev_ch_seq[i] = prev_ch_seq[i + 1];
@@ -95,8 +101,10 @@ namespace ppm{
 
         void update_dynamic_table(int ch){
             auto table_ptr = get_table();
-            for (int i = ch; i <= MAX_BYTE; ++i) table_ptr[i] += delta;
-            if (table_ptr[MAX_BYTE] >= MAX_PARITY) strict_table(table_ptr);
+            if ((uint64_t)table_ptr + delta >= UINT16_MAX) strict_table(table_ptr);
+            table_ptr[ch] += delta;
+//            for (int i = ch; i <= MAX_BYTE; ++i) table_ptr[i] += delta;
+//            if (table_ptr[MAX_BYTE] >= MAX_PARITY) strict_table(table_ptr);
             if (model_shape > 0) add_prev_ch(ch);
         }
 
@@ -164,14 +172,6 @@ namespace ppm{
             buf += buf + (bit ? 1 : 0);
         }
 
-        int get_char(uint64_t val, uint64_t l, uint64_t h){
-            auto table_ptr = get_table();
-            uint64_t tmp = (val - l + 1) * table_ptr[MAX_BYTE];
-            int i = 0;
-            for (; (i <= MAX_BYTE) and (table_ptr[i] * (h - l + 1) < tmp); ++i){}
-            return i;
-        }
-
         void free_table(void **table_ptr, int shape){
             if (shape == 0) {
                 delete[] table_ptr;
@@ -192,7 +192,14 @@ namespace ppm{
 
     };
 
-    uint64_t get_val(uint16_t* table, int pos){
+    int get_char(uint64_t *table_ptr, uint64_t val, uint64_t l, uint64_t h){
+        uint64_t tmp = (val - l + 1) * table_ptr[MAX_BYTE];
+        int i = 0;
+        for (; (i <= MAX_BYTE) and (table_ptr[i] * (h - l + 1) < tmp); ++i){}
+        return i;
+    }
+
+    uint64_t get_val(uint64_t* table, int pos){
         if (pos >= 0){
             return table[pos];
         }
@@ -239,14 +246,15 @@ void compress_ppm(char *ifile, char *ofile) {
     uint64_t l = 0, h = WORD_SIZE;
     const uint64_t first_qtr = (h + 1) / 4, half = first_qtr * 2, third_qtr = first_qtr * 3;
     uint64_t bits_to_follow = 0, i = 0;
+    auto table = new uint64_t[MAX_BYTE + 1];
 
     int ch;
     while ((ch = fgetc(ifp)) != EOF){
         ++i;
         uint64_t range = (h - l + 1);
-        auto table_ptr = compressed.get_table();
-        h = l + (ppm::get_val(table_ptr, ch    ) * range) / table_ptr[MAX_BYTE] - 1;
-        l = l + (ppm::get_val(table_ptr, ch - 1) * range) / table_ptr[MAX_BYTE];
+        compressed.load_table(table);
+        h = l + (ppm::get_val(table, ch    ) * range) / table[MAX_BYTE] - 1;
+        l = l + (ppm::get_val(table, ch - 1) * range) / table[MAX_BYTE];
         compressed.update_dynamic_table(ch);
         for (;;){
             if ((l >= WORD_SIZE) or (h > WORD_SIZE)){
@@ -282,6 +290,7 @@ void compress_ppm(char *ifile, char *ofile) {
 
     compressed.flush();
     fclose(ifp);
+    delete[] table;
 }
 
 void decompress_ppm(char *ifile, char *ofile) {
@@ -298,14 +307,15 @@ void decompress_ppm(char *ifile, char *ofile) {
     uint64_t l = 0, h = WORD_SIZE;
     const uint64_t first_qtr = (h + 1) / 4, half = first_qtr * 2, third_qtr = first_qtr * 3;
     uint64_t value = read_value(compressed, (WORD_SIZE == 65535) ? 16 : 32);
+    auto table = new uint64_t[MAX_BYTE + 1];
 
     for (uint64_t i = 0; i < compressed.file_len; ++i){
-        uint64_t ch = compressed.get_char(value, l, h);
+        compressed.load_table(table);
+        uint64_t ch = ppm::get_char(table, value, l, h);
         fprintf(ofp, "%c", (char)ch);
         uint64_t range = (h - l + 1);
-        auto table_ptr = compressed.get_table();
-        h = l + (ppm::get_val(table_ptr, (int)ch    ) * range) / table_ptr[MAX_BYTE] - 1;
-        l = l + (ppm::get_val(table_ptr, (int)ch - 1) * range) / table_ptr[MAX_BYTE];
+        h = l + (ppm::get_val(table, (int)ch    ) * range) / table[MAX_BYTE] - 1;
+        l = l + (ppm::get_val(table, (int)ch - 1) * range) / table[MAX_BYTE];
         compressed.update_dynamic_table((int)ch);
         for (;;){
             if ((l >= WORD_SIZE) or (h > WORD_SIZE) or (value < l) or (value > h)){
@@ -330,4 +340,5 @@ void decompress_ppm(char *ifile, char *ofile) {
 
     }
     fclose(ofp);
+    delete[] table;
 }
