@@ -14,28 +14,26 @@
 #define MAX_PARITY 2147483648
 #define MIN_PARITY 2
 #define DELTA 2097152
-#define SHAPE 0
+#define SHAPE 2
 
 namespace ppm{
-
     struct compressed_file{
         FILE* fd;
         uint8_t buf;
         int buf_size;
         uint64_t file_len;
-        void** table;
+        void **table;
         int model_shape;
+        int *prev_ch_seq;
         char* path;
         bool is_open;
         bool mode; //true if open in write mode
         uint64_t delta;
-        int* prev_ch_seq;
 #define READ_M false
 #define WRITE_M true
 
         explicit compressed_file(char* path, int model_shape) :
-                buf(0), file_len(0), buf_size(0), is_open(false),
-                mode(false), fd(nullptr), delta(1), model_shape(model_shape)
+                buf(0), file_len(0), buf_size(0), is_open(false), mode(false), fd(nullptr), delta(1), model_shape(model_shape)
         {
             this->path = static_cast<char *>(malloc(strlen(path)));
             strcpy(this->path, path);
@@ -43,24 +41,23 @@ namespace ppm{
             prev_ch_seq = new int[model_shape];
         }
 
-        void init_dynamic_table(){
+        void init_dynamic_table(uint64_t initial_val){
             if (model_shape == 0){
-                const uint64_t initial_val = 2;
-                auto tmp_table = new uint64_t[MAX_BYTE + 1];
-                tmp_table[0] = initial_val;
-                for (int i = 1; i <= MAX_BYTE; ++i) tmp_table[i] = tmp_table[i - 1] + initial_val;
-                this->table = (void **)tmp_table;
+                auto tmp_ptr = new uint64_t[MAX_BYTE + 1];
+                tmp_ptr[0] = initial_val;
+                for (int i = 1; i <= MAX_BYTE; ++i) tmp_ptr[i] = tmp_ptr[i - 1] + initial_val;
+                this->table = (void**)tmp_ptr;
                 return;
             }
             this->table = new void*[MAX_BYTE + 1];
-            for (int i = 1; i <= MAX_BYTE; ++i) table[i] = nullptr;
+            for (int i = 0; i <= MAX_BYTE; ++i) table[i] = nullptr;
         }
 
-        void strict_table(uint64_t* table){
-            for (int i = MAX_BYTE; i > 0; --i) table[i] -= table[i - 1]; // decomposition
+        void strict_table(uint64_t *table_ptr){
+            for (int i = MAX_BYTE; i > 0; --i) table_ptr[i] -= table_ptr[i - 1]; // decomposition
             for (int i = 0; i <= MAX_BYTE; ++i)
-                if (table[i] >= 2*MIN_PARITY) table[i] = table[i] / 2;
-            for (int i = 1; i <= MAX_BYTE; ++i) table[i] += table[i - 1]; // composition
+                if (table_ptr[i] >= 2 * MIN_PARITY) table_ptr[i] = table_ptr[i] / 2;
+            for (int i = 1; i <= MAX_BYTE; ++i) table_ptr[i] += table_ptr[i - 1]; // composition
         }
 
         uint64_t* get_table(){
@@ -75,6 +72,7 @@ namespace ppm{
                 }
                 table_ptr = (void**)(table_ptr[prev_ch_seq[i]]);
             }
+
             if (table_ptr[prev_ch_seq[model_shape - 1]] == nullptr){
                 //init_int64_table
                 auto tmp_ptr = new uint64_t[MAX_BYTE+1];
@@ -97,7 +95,7 @@ namespace ppm{
         void update_dynamic_table(int ch){
             auto table_ptr = get_table();
             for (int i = ch; i <= MAX_BYTE; ++i) table_ptr[i] += delta;
-            if (table_ptr[MAX_BYTE] < MAX_PARITY) strict_table(table_ptr);
+            if (table_ptr[MAX_BYTE] >= MAX_PARITY) strict_table(table_ptr);
             if (model_shape > 0) add_prev_ch(ch);
         }
 
@@ -173,7 +171,7 @@ namespace ppm{
             return i;
         }
 
-        ~compressed_file() {
+        ~compressed_file(){
             flush();
             fclose(fd);
             free(path);
@@ -213,7 +211,6 @@ namespace ppm{
         printf("FILE SIZE = %ld\n", st.st_size);
         return st.st_size;
     }
-
 }
 
 void compress_ppm(char *ifile, char *ofile) {
@@ -221,22 +218,21 @@ void compress_ppm(char *ifile, char *ofile) {
     auto compressed = ppm::compressed_file(ofile, SHAPE);
     compressed.delta = DELTA;
     compressed.open_to_write();
-    compressed.init_dynamic_table();
+    compressed.init_dynamic_table(2);
     compressed.file_len = ppm::get_file_size(ifile);
     printf("Delta: %d\n", DELTA);
     printf("File len = %ld\n", compressed.file_len);
     compressed.write_header();
 
     uint64_t l = 0, h = WORD_SIZE;
-    const uint64_t first_qtr = (h + 1)/ 4, half = first_qtr * 2, third_qtr = first_qtr * 3;
+    const uint64_t first_qtr = (h + 1) / 4, half = first_qtr * 2, third_qtr = first_qtr * 3;
     uint64_t bits_to_follow = 0, i = 0;
 
     int ch;
     while ((ch = fgetc(ifp)) != EOF){
         ++i;
-//        printf("%c\n", ch);
-        auto table_ptr = compressed.get_table();
         uint64_t range = (h - l + 1);
+        auto table_ptr = compressed.get_table();
         h = l + (ppm::get_val(table_ptr, ch    ) * range) / table_ptr[MAX_BYTE] - 1;
         l = l + (ppm::get_val(table_ptr, ch - 1) * range) / table_ptr[MAX_BYTE];
         compressed.update_dynamic_table(ch);
@@ -282,20 +278,20 @@ void decompress_ppm(char *ifile, char *ofile) {
     auto compressed = ppm::compressed_file(ifile, SHAPE);
     compressed.open_to_read();
     compressed.delta = DELTA;
-    compressed.init_dynamic_table();
+    compressed.init_dynamic_table(2);
     uint64_t file_len = compressed.file_len;
 
     printf("File len = %ld\n", file_len);
 
     uint64_t l = 0, h = WORD_SIZE;
-    const uint64_t first_qtr = (h + 1)/ 4, half = first_qtr * 2, third_qtr = first_qtr * 3;
+    const uint64_t first_qtr = (h + 1) / 4, half = first_qtr * 2, third_qtr = first_qtr * 3;
     uint64_t value = read_value(compressed, (WORD_SIZE == 65535) ? 16 : 32);
 
     for (uint64_t i = 0; i < compressed.file_len; ++i){
         uint64_t ch = compressed.get_char(value, l, h);
         fprintf(ofp, "%c", (char)ch);
-        auto table_ptr = compressed.get_table();
         uint64_t range = (h - l + 1);
+        auto table_ptr = compressed.get_table();
         h = l + (ppm::get_val(table_ptr, (int)ch    ) * range) / table_ptr[MAX_BYTE] - 1;
         l = l + (ppm::get_val(table_ptr, (int)ch - 1) * range) / table_ptr[MAX_BYTE];
         compressed.update_dynamic_table((int)ch);
@@ -321,6 +317,5 @@ void decompress_ppm(char *ifile, char *ofile) {
         }
 
     }
-
     fclose(ofp);
 }
