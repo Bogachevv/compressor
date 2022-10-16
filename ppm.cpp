@@ -171,11 +171,21 @@ namespace ppm{
             return i;
         }
 
+        void free_table(void **table_ptr, int shape){
+            if (shape == 0) {
+                delete[] table_ptr;
+                return;
+            }
+            for (int i = 0; i <= MAX_BYTE; ++i)
+                if (table_ptr[i] != nullptr) free_table((void**)table_ptr[i], shape - 1);
+            delete[] table_ptr;
+        }
+
         ~compressed_file(){
             flush();
             fclose(fd);
             free(path);
-            delete[] table;
+            free_table(table, model_shape);
         }
 
     };

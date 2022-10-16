@@ -41,14 +41,15 @@ def main():
     min_delta_pow = 6
     max_delta_pow = 26
     deltas = np.logspace(min_delta_pow, max_delta_pow, num=7, base=2, dtype=int)
-    x = np.linspace(2, 8, num=7, dtype=int)
+    x = np.linspace(0, 8, num=7, dtype=int)
 
     files = [f'../public_tests/0{i}_test_file_input/test_{i+1}' for i in range(1, 7) if i != 3]
-    files += ['./war_and_peace.txt', 'very_big_file.txt', 'idiot.txt']
+    files += ['./war_and_peace.txt', 'idiot.txt']
     # path = f'../public_tests/0{6}_test_file_input/test_{7}'
     colors = ['r', 'g', 'b', 'k', 'm', 'y', 'c']
     # delta = 2 ** 18
     for path in files:
+        print(f"Testing file {path}")
         for i, delta in enumerate(deltas):
             y = np.array([calc_compression(delta, 2, shape, path) for shape in x], dtype=float)
             print(*zip(x, y), sep='\n')
