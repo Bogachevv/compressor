@@ -28,7 +28,7 @@ namespace ppm{
         char* path;
         bool is_open;
         bool mode; //true if open in write mode
-        uint64_t delta;
+        uint16_t delta;
         uint64_t available_memory;
 #define READ_M false
 #define WRITE_M true
@@ -255,14 +255,18 @@ namespace ppm{
     }
 }
 
-uint64_t compress(char *ifile, char *ofile, int shape, uint64_t delta) {
+uint64_t compress(char *ifile, char *ofile, int shape, uint16_t delta) {
     FILE *ifp = (FILE *)fopen(ifile, "rb");
     auto compressed = ppm::compressed_file(ofile, shape, 1800*1024*1024ul);
     compressed.delta = delta;
     compressed.open_to_write();
     compressed.init_dynamic_table(2);
     compressed.file_len = ppm::get_file_size(ifile);
-    printf("Delta: %ld\n", delta);
+    if (compressed.file_len == 0){
+        printf("File empty\n");
+        return 0;
+    }
+    printf("Delta: %d\n", delta);
     printf("File len = %ld\n", compressed.file_len);
     compressed.write_header();
 
@@ -320,7 +324,7 @@ uint64_t compress(char *ifile, char *ofile, int shape, uint64_t delta) {
 void compress_ppm(char *ifile, char *ofile){
     uint64_t min_cl = UINT64_MAX;
     int min_cl_shape = 0;
-    uint64_t min_cl_delta = 128;
+    uint16_t min_cl_delta = 128;
     try{
         for (int i = 0; i < 8; ++i){
             uint64_t cl = compress(ifile, ofile, i, min_cl_delta);
@@ -335,20 +339,25 @@ void compress_ppm(char *ifile, char *ofile){
     printf("min_cl_shape = %d\n", min_cl_shape);
 
     min_cl = UINT64_MAX;
-    for (uint64_t delta = 128; delta <= 32768; delta *= 2){
+    for (uint64_t delta = 128; delta <= 49152; delta *= 2){
         uint64_t cl = compress(ifile, ofile, min_cl_shape, delta);
         if (cl < min_cl){
             min_cl = cl;
             min_cl_delta = delta;
         }
     }
-    printf("min_cl_delta = %ld\n", min_cl_delta);
+    printf("min_cl_delta = %d\n", min_cl_delta);
 
     compress(ifile, ofile, min_cl_shape, min_cl_delta);
 }
 
 void decompress_ppm(char *ifile, char *ofile) {
     FILE *ofp = (FILE *)fopen(ofile, "wb");
+
+    if (ppm::get_file_size(ifile) == 0){
+        printf("File empty\n");
+        return;
+    }
 
     auto compressed = ppm::compressed_file(ifile, SHAPE);
     compressed.open_to_read();
@@ -361,7 +370,7 @@ void decompress_ppm(char *ifile, char *ofile) {
 
     uint64_t l = 0, h = WORD_SIZE;
     const uint64_t first_qtr = (h + 1) / 4, half = first_qtr * 2, third_qtr = first_qtr * 3;
-    uint64_t value = read_value(compressed, (WORD_SIZE == 65535) ? 16 : 32);
+    uint64_t value = ppm::read_value(compressed, (WORD_SIZE == 65535) ? 16 : 32);
     auto table = new uint64_t[MAX_BYTE + 1];
 
     for (uint64_t i = 0; i < compressed.file_len; ++i){
