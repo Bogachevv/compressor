@@ -6,15 +6,15 @@
 #include <cstdint>
 
 #include "ppm.h"
-//#include "settings.h"  // DELETE before send
+#include "settings.h"  // DELETE before send
 
 #define MAX_BYTE 255
 #define WORD_SIZE 4294967295
 //#define WORD_SIZE 65535
 //#define MAX_PARITY 8388608
-#define MIN_PARITY 2
-#define DELTA 1625
-#define SHAPE 2
+//#define MIN_PARITY 2
+//#define DELTA 1625
+//#define SHAPE 5
 
 namespace ppm{
     struct compressed_file{
@@ -29,28 +29,38 @@ namespace ppm{
         bool is_open;
         bool mode; //true if open in write mode
         uint64_t delta;
+        uint64_t available_memory;
 #define READ_M false
 #define WRITE_M true
 
-        explicit compressed_file(char* path, int model_shape) :
-                buf(0), file_len(0), buf_size(0), is_open(false), mode(false), fd(nullptr), delta(1), model_shape(model_shape)
+        explicit compressed_file(char* path, int model_shape, uint64_t available_memory = UINT64_MAX) :
+                buf(0), file_len(0), buf_size(0), is_open(false), mode(false), fd(nullptr), delta(1),
+                model_shape(model_shape), available_memory(available_memory)
         {
             this->path = static_cast<char *>(malloc(strlen(path) + 1));
             strcpy(this->path, path);
             table = nullptr;
             prev_ch_seq = new int[model_shape];
+            this->available_memory -= (model_shape) * sizeof(*prev_ch_seq);
             for (int i = 0; i < model_shape; ++i) prev_ch_seq[i] = 0;
+
         }
 
         void init_dynamic_table(uint64_t initial_val){
             if (model_shape == 0){
+                uint64_t table_size = (MAX_BYTE + 1) * sizeof(uint16_t);
+                if (this->available_memory < table_size) throw std::runtime_error("Compressed file: not enough memory");
                 auto tmp_ptr = new uint16_t[MAX_BYTE + 1];
+                this->available_memory -= table_size;
                 tmp_ptr[0] = initial_val;
                 for (int i = 1; i <= MAX_BYTE; ++i) tmp_ptr[i] = tmp_ptr[i - 1] + initial_val;
                 this->table = (void**)tmp_ptr;
                 return;
             }
+            uint64_t table_size = (MAX_BYTE + 1) * sizeof(void*);
+            if (this->available_memory < table_size) throw std::runtime_error("Compressed file: not enough memory");
             this->table = new void*[MAX_BYTE + 1];
+            this->available_memory -= table_size;
             for (int i = 0; i <= MAX_BYTE; ++i) table[i] = nullptr;
         }
 
@@ -67,7 +77,11 @@ namespace ppm{
             for (int i = 0; i < model_shape - 1; ++i){
                 if (table_ptr[prev_ch_seq[i]] == nullptr){
                     //init_pointer_table
+                    uint64_t table_size = (MAX_BYTE + 1) * sizeof(void*);
+                    if (this->available_memory < table_size)
+                        throw std::runtime_error("Compressed file: not enough memory");
                     table_ptr[prev_ch_seq[i]] = new void*[MAX_BYTE+1];
+                    this->available_memory -= table_size;
                     void** tmp_ptr = (void**)table_ptr[prev_ch_seq[i]];
                     for (int j = 0; j <= MAX_BYTE; ++j) tmp_ptr[j] = nullptr;
                 }
@@ -76,7 +90,11 @@ namespace ppm{
 
             if (table_ptr[prev_ch_seq[model_shape - 1]] == nullptr){
                 //init_int64_table
+                uint64_t table_size = (MAX_BYTE + 1) * sizeof(uint16_t);
+                if (this->available_memory < table_size)
+                    throw std::runtime_error("Compressed file: not enough memory");
                 auto tmp_ptr = new uint16_t[MAX_BYTE+1];
+                this->available_memory -= table_size;
                 const int initial_val = 2;
                 tmp_ptr[0] = initial_val;
                 for (int j = 1; j <= MAX_BYTE; ++j) tmp_ptr[j] = tmp_ptr[j - 1] + initial_val;
@@ -234,7 +252,7 @@ namespace ppm{
 
 void compress_ppm(char *ifile, char *ofile) {
     FILE *ifp = (FILE *)fopen(ifile, "rb");
-    auto compressed = ppm::compressed_file(ofile, SHAPE);
+    auto compressed = ppm::compressed_file(ofile, SHAPE, 2048*1024*1024ul);
     compressed.delta = DELTA;
     compressed.open_to_write();
     compressed.init_dynamic_table(2);
