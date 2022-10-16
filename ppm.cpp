@@ -21,7 +21,7 @@ namespace ppm{
         FILE* fd;
         uint8_t buf;
         int buf_size;
-        uint64_t file_len, compressed_len;
+        uint64_t file_len;
         void **table;
         int model_shape;
         int *prev_ch_seq;
@@ -37,9 +37,9 @@ namespace ppm{
         {
             this->path = static_cast<char *>(malloc(strlen(path) + 1));
             strcpy(this->path, path);
-            compressed_len = 0;
             table = nullptr;
-            prev_ch_seq = nullptr;
+            prev_ch_seq = new int[model_shape];
+            for (int i = 0; i < model_shape; ++i) prev_ch_seq[i] = 0;
         }
 
         void init_dynamic_table(uint64_t initial_val){
@@ -102,12 +102,10 @@ namespace ppm{
 
         void write_header(){
             fwrite(&file_len, sizeof(file_len), 1, fd);
-            fwrite(&model_shape, sizeof(model_shape), 1, fd);
         }
 
         void read_header(){
             fread(&file_len, 8, 1, fd);
-            fread(&model_shape, sizeof(model_shape), 1, fd);
         }
 
         void open_to_read(){
@@ -118,13 +116,9 @@ namespace ppm{
             is_open = true;
             mode = READ_M;
             read_header();
-            prev_ch_seq = new int[model_shape];
-            for (int i = 0; i < model_shape; ++i) prev_ch_seq[i] = 0;
         }
 
         void open_to_write(){
-            prev_ch_seq = new int[model_shape];
-            for (int i = 0; i < model_shape; ++i) prev_ch_seq[i] = 0;
             fd = fopen(path, "wb");
             if (!fd){
                 throw std::runtime_error("Can't open file");
@@ -139,7 +133,6 @@ namespace ppm{
             fwrite(&buf, sizeof(buf), 1, fd);
             buf = 0;
             buf_size = 0;
-            ++compressed_len;
         }
 
         int read_bit(){
@@ -232,9 +225,9 @@ namespace ppm{
     }
 }
 
-uint64_t compress(char *ifile, char *ofile, int shape) {
+void compress_ppm(char *ifile, char *ofile) {
     FILE *ifp = (FILE *)fopen(ifile, "rb");
-    auto compressed = ppm::compressed_file(ofile, shape);
+    auto compressed = ppm::compressed_file(ofile, SHAPE);
     compressed.delta = DELTA;
     compressed.open_to_write();
     compressed.init_dynamic_table(2);
@@ -289,20 +282,6 @@ uint64_t compress(char *ifile, char *ofile, int shape) {
 
     compressed.flush();
     fclose(ifp);
-    return compressed.compressed_len;
-}
-
-void compress_ppm(char *ifile, char *ofile){
-    uint64_t min_cl = UINT64_MAX;
-    int min_cl_shape = 0;
-    for (int i = 0; i < 6; ++i){
-        uint64_t cl = compress(ifile, ofile, i);
-        if (cl < min_cl){
-            min_cl = cl;
-            min_cl_shape = i;
-        }
-    }
-    compress(ifile, ofile, min_cl_shape);
 }
 
 void decompress_ppm(char *ifile, char *ofile) {
