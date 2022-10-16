@@ -250,7 +250,7 @@ namespace ppm{
         if (rs != 0){
             throw std::runtime_error("Can't read file size");
         }
-        printf("FILE SIZE = %ld\n", st.st_size);
+//        printf("FILE SIZE = %ld\n", st.st_size);
         return st.st_size;
     }
 }
@@ -266,8 +266,8 @@ uint64_t compress(char *ifile, char *ofile, int shape, uint16_t delta) {
         printf("File empty\n");
         return 0;
     }
-    printf("Delta: %d\n", delta);
-    printf("File len = %ld\n", compressed.file_len);
+    printf("Delta: %d\tShape: %d\n", delta, shape);
+//    printf("File len = %ld\n", compressed.file_len);
     compressed.write_header();
 
     uint64_t l = 0, h = WORD_SIZE;
@@ -318,6 +318,7 @@ uint64_t compress(char *ifile, char *ofile, int shape, uint16_t delta) {
     compressed.flush();
     fclose(ifp);
     delete[] table;
+    printf("Compressed len = %ld\n", compressed.compressed_len);
     return compressed.compressed_len;
 }
 
@@ -325,28 +326,30 @@ void compress_ppm(char *ifile, char *ofile){
     uint64_t min_cl = UINT64_MAX;
     int min_cl_shape = 0;
     uint16_t min_cl_delta = 128;
-    try{
-        for (int i = 0; i < 8; ++i){
-            uint64_t cl = compress(ifile, ofile, i, min_cl_delta);
+    for (int j = 0; j < 2; ++j){
+        try{
+            for (int i = 0; i < 8; ++i){
+                uint64_t cl = compress(ifile, ofile, i, min_cl_delta);
+                if (cl < min_cl){
+                    min_cl = cl;
+                    min_cl_shape = i;
+                }
+            }
+        } catch (std::runtime_error& err) {
+            printf("%s\n", err.what());
+        }
+        printf("min_cl_shape = %d\n", min_cl_shape);
+
+        min_cl = UINT64_MAX;
+        for (uint64_t delta = 128; delta <= 32768; delta *= 2){
+            uint64_t cl = compress(ifile, ofile, min_cl_shape, delta);
             if (cl < min_cl){
                 min_cl = cl;
-                min_cl_shape = i;
+                min_cl_delta = delta;
             }
         }
-    } catch (std::runtime_error& err) {
-        printf("%s\n", err.what());
+        printf("min_cl_delta = %d\n", min_cl_delta);
     }
-    printf("min_cl_shape = %d\n", min_cl_shape);
-
-    min_cl = UINT64_MAX;
-    for (uint64_t delta = 128; delta <= 49152; delta *= 2){
-        uint64_t cl = compress(ifile, ofile, min_cl_shape, delta);
-        if (cl < min_cl){
-            min_cl = cl;
-            min_cl_delta = delta;
-        }
-    }
-    printf("min_cl_delta = %d\n", min_cl_delta);
 
     compress(ifile, ofile, min_cl_shape, min_cl_delta);
 }
