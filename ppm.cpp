@@ -6,15 +6,15 @@
 #include <cstdint>
 
 #include "ppm.h"
-//#include "settings.h"  // DELETE before send
+#include "settings.h"  // DELETE before send
 
 #define MAX_BYTE 255
 #define WORD_SIZE 4294967295
 //#define WORD_SIZE 65535
-#define MAX_PARITY 2147483648
-#define MIN_PARITY 2
-#define DELTA 2097152
-#define SHAPE 2
+#define MAX_PARITY 32768
+//#define MIN_PARITY 2
+//#define DELTA 256
+//#define SHAPE 5
 
 namespace ppm{
     struct compressed_file{
@@ -44,7 +44,7 @@ namespace ppm{
 
         void init_dynamic_table(uint64_t initial_val){
             if (model_shape == 0){
-                auto tmp_ptr = new uint64_t[MAX_BYTE + 1];
+                auto tmp_ptr = new uint16_t[MAX_BYTE + 1];
                 tmp_ptr[0] = initial_val;
                 for (int i = 1; i <= MAX_BYTE; ++i) tmp_ptr[i] = tmp_ptr[i - 1] + initial_val;
                 this->table = (void**)tmp_ptr;
@@ -54,15 +54,15 @@ namespace ppm{
             for (int i = 0; i <= MAX_BYTE; ++i) table[i] = nullptr;
         }
 
-        void strict_table(uint64_t *table_ptr){
+        void strict_table(uint16_t *table_ptr){
             for (int i = MAX_BYTE; i > 0; --i) table_ptr[i] -= table_ptr[i - 1]; // decomposition
             for (int i = 0; i <= MAX_BYTE; ++i)
                 if (table_ptr[i] >= 2 * MIN_PARITY) table_ptr[i] = table_ptr[i] / 2;
             for (int i = 1; i <= MAX_BYTE; ++i) table_ptr[i] += table_ptr[i - 1]; // composition
         }
 
-        uint64_t* get_table(){
-            if (model_shape == 0) return (uint64_t*)table;
+        uint16_t* get_table(){
+            if (model_shape == 0) return (uint16_t*)table;
             void** table_ptr = table;
             for (int i = 0; i < model_shape - 1; ++i){
                 if (table_ptr[prev_ch_seq[i]] == nullptr){
@@ -76,14 +76,14 @@ namespace ppm{
 
             if (table_ptr[prev_ch_seq[model_shape - 1]] == nullptr){
                 //init_int64_table
-                auto tmp_ptr = new uint64_t[MAX_BYTE+1];
+                auto tmp_ptr = new uint16_t[MAX_BYTE+1];
                 const int initial_val = 2;
                 tmp_ptr[0] = initial_val;
                 for (int j = 1; j <= MAX_BYTE; ++j) tmp_ptr[j] = tmp_ptr[j - 1] + initial_val;
                 table_ptr[prev_ch_seq[model_shape - 1]] = (void**)tmp_ptr;
             }
             table_ptr = (void**)(table_ptr[prev_ch_seq[model_shape - 1]]);
-            return (uint64_t*)table_ptr;
+            return (uint16_t*)table_ptr;
         }
 
         void add_prev_ch(int ch){
@@ -192,7 +192,7 @@ namespace ppm{
 
     };
 
-    uint64_t get_val(uint64_t* table, int pos){
+    uint64_t get_val(uint16_t* table, int pos){
         if (pos >= 0){
             return table[pos];
         }
