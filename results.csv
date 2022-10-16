@@ -1,8 +1,8 @@
 method;file;original_size;compressed_size;conclusion
-ppm;test_1;13;27;OK
-ppm;test_2;13095;8879;OK
-ppm;test_3;226304;166967;OK
-ppm;test_4;0;12;OK
-ppm;test_5;1000000;32317;OK
-ppm;test_6;1000000;32301;OK
-ppm;test_7;1000000;35406;OK
+ppm;test_1;13;34;OK
+ppm;test_2;13095;8937;OK
+ppm;test_3;226304;160198;OK
+ppm;test_4;0;20;OK
+ppm;test_5;1000000;1784;OK
+ppm;test_6;1000000;1766;OK
+ppm;test_7;1000000;5640;OK

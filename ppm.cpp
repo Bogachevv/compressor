@@ -6,15 +6,15 @@
 #include <cstdint>
 
 #include "ppm.h"
-#include "settings.h"  // DELETE before send
+//#include "settings.h"  // DELETE before send
 
 #define MAX_BYTE 255
 #define WORD_SIZE 4294967295
 //#define WORD_SIZE 65535
 //#define MAX_PARITY 8388608
-//#define MIN_PARITY 2
-//#define DELTA 1625
-//#define SHAPE 5
+#define MIN_PARITY 2
+#define DELTA 1625
+#define SHAPE 5
 
 namespace ppm{
     struct compressed_file{
@@ -123,11 +123,13 @@ namespace ppm{
         void write_header(){
             fwrite(&file_len, sizeof(file_len), 1, fd);
             fwrite(&model_shape, sizeof(model_shape), 1, fd);
+            fwrite(&delta, sizeof(delta), 1, fd);
         }
 
         void read_header(){
             fread(&file_len, 8, 1, fd);
             fread(&model_shape, sizeof(model_shape), 1, fd);
+            fread(&delta, sizeof(delta), 1, fd);
         }
 
         void open_to_read(){
@@ -253,14 +255,14 @@ namespace ppm{
     }
 }
 
-uint64_t compress(char *ifile, char *ofile, int shape) {
+uint64_t compress(char *ifile, char *ofile, int shape, uint64_t delta) {
     FILE *ifp = (FILE *)fopen(ifile, "rb");
     auto compressed = ppm::compressed_file(ofile, shape, 1800*1024*1024ul);
-    compressed.delta = DELTA;
+    compressed.delta = delta;
     compressed.open_to_write();
     compressed.init_dynamic_table(2);
     compressed.file_len = ppm::get_file_size(ifile);
-    printf("Delta: %d\n", DELTA);
+    printf("Delta: %ld\n", delta);
     printf("File len = %ld\n", compressed.file_len);
     compressed.write_header();
 
@@ -318,9 +320,10 @@ uint64_t compress(char *ifile, char *ofile, int shape) {
 void compress_ppm(char *ifile, char *ofile){
     uint64_t min_cl = UINT64_MAX;
     int min_cl_shape = 0;
+    uint64_t min_cl_delta = 128;
     try{
         for (int i = 0; i < 8; ++i){
-            uint64_t cl = compress(ifile, ofile, i);
+            uint64_t cl = compress(ifile, ofile, i, min_cl_delta);
             if (cl < min_cl){
                 min_cl = cl;
                 min_cl_shape = i;
@@ -330,7 +333,18 @@ void compress_ppm(char *ifile, char *ofile){
         printf("%s\n", err.what());
     }
     printf("min_cl_shape = %d\n", min_cl_shape);
-    compress(ifile, ofile, min_cl_shape);
+
+    min_cl = UINT64_MAX;
+    for (uint64_t delta = 128; delta <= 32768; delta *= 2){
+        uint64_t cl = compress(ifile, ofile, min_cl_shape, delta);
+        if (cl < min_cl){
+            min_cl = cl;
+            min_cl_delta = delta;
+        }
+    }
+    printf("min_cl_delta = %ld\n", min_cl_delta);
+
+    compress(ifile, ofile, min_cl_shape, min_cl_delta);
 }
 
 void decompress_ppm(char *ifile, char *ofile) {
@@ -338,7 +352,7 @@ void decompress_ppm(char *ifile, char *ofile) {
 
     auto compressed = ppm::compressed_file(ifile, SHAPE);
     compressed.open_to_read();
-    compressed.delta = DELTA;
+//    compressed.delta = DELTA;
     compressed.init_dynamic_table(2);
     uint64_t file_len = compressed.file_len;
 
