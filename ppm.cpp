@@ -35,10 +35,11 @@ namespace ppm{
         explicit compressed_file(char* path, int model_shape) :
                 buf(0), file_len(0), buf_size(0), is_open(false), mode(false), fd(nullptr), delta(1), model_shape(model_shape)
         {
-            this->path = static_cast<char *>(malloc(strlen(path)));
+            this->path = static_cast<char *>(malloc(strlen(path) + 1));
             strcpy(this->path, path);
             table = nullptr;
             prev_ch_seq = new int[model_shape];
+            for (int i = 0; i < model_shape; ++i) prev_ch_seq[i] = 0;
         }
 
         void init_dynamic_table(uint64_t initial_val){
@@ -185,6 +186,7 @@ namespace ppm{
             flush();
             fclose(fd);
             free(path);
+            delete[] prev_ch_seq;
             free_table(table, model_shape);
         }
 
