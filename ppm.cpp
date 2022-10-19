@@ -6,15 +6,15 @@
 #include <cstdint>
 
 #include "ppm.h"
-#include "settings.h"  // DELETE before send
+//#include "settings.h"  // DELETE before send
 
 #define MAX_BYTE 255
 #define WORD_SIZE 4294967295
 //#define WORD_SIZE 65535
 #define MAX_PARITY 2147483648
-//#define MIN_PARITY 2
-//#define DELTA 2097152
-//#define SHAPE 2
+#define MIN_PARITY 2
+#define DELTA 2097152
+#define SHAPE 2
 
 namespace ppm{
     struct compressed_file{
@@ -257,7 +257,8 @@ uint64_t compress(char *ifile, char *ofile, int shape, uint64_t delta) {
         printf("Empty file\n");
         return 0;
     }
-    printf("Delta: %d\n", DELTA);
+    printf("Delta: %ld\n", delta);
+    printf("Shape: %d\n", shape);
     printf("File len = %ld\n", compressed.file_len);
     compressed.write_header();
 
@@ -311,7 +312,27 @@ uint64_t compress(char *ifile, char *ofile, int shape, uint64_t delta) {
 }
 
 void compress_ppm(char *ifile, char *ofile){
-    uint64_t cl = compress(ifile, ofile, SHAPE, DELTA);
+    uint64_t min_cl = UINT64_MAX;
+    uint64_t min_cl_delta = 32;
+    int min_cl_shape = 0;
+    try {
+        for (int shape = 0; shape < 8; ++shape){
+            uint64_t cl = compress(ifile, ofile, shape, min_cl_delta);
+            if (cl >= min_cl) break;
+            min_cl = cl;
+            min_cl_shape = shape;
+        }
+    }catch (std::runtime_error& err){
+        printf("Runtime error: %s\n", err.what());
+    }
+    for (uint64_t delta = min_cl_delta; delta <= 268435456lu; delta *= 2){
+        uint64_t cl = compress(ifile, ofile, min_cl_shape, delta);
+        if (cl >= min_cl) break;
+        min_cl = cl;
+        min_cl_delta = delta;
+    }
+
+    uint64_t cl = compress(ifile, ofile, min_cl_shape, min_cl_delta);
     printf("Compressed len = %ld\n", cl);
 }
 
@@ -319,8 +340,8 @@ void decompress_ppm(char *ifile, char *ofile) {
     FILE *ofp = (FILE *)fopen(ofile, "wb");
 
     auto compressed = ppm::compressed_file(ifile, SHAPE);
-    compressed.open_to_read();
     compressed.delta = DELTA;
+    compressed.open_to_read();
     compressed.init_dynamic_table(2);
     uint64_t file_len = compressed.file_len;
     if (compressed.file_len == 0){
