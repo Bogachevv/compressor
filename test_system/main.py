@@ -45,7 +45,7 @@ def main():
     max_shape = 7
     deltas = np.linspace(min_delta_pow, max_delta_pow, num=max_delta_pow - min_delta_pow + 1, dtype=int)
     shapes = np.linspace(min_shape, max_shape, num=max_shape - min_shape + 1, dtype=int)
-    fname = "war_and_peace.txt"
+    fname = "test_5"
     path = f'./logs/{fname}.log'
     X, Y = np.meshgrid(deltas, shapes)
     with open(path, "r") as f:

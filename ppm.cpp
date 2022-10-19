@@ -259,7 +259,7 @@ uint64_t compress(char *ifile, char *ofile, int shape, uint64_t delta) {
     }
     printf("Delta: %ld\n", delta);
     printf("Shape: %d\n", shape);
-    printf("File len = %ld\n", compressed.file_len);
+//    printf("File len = %ld\n", compressed.file_len);
     compressed.write_header();
 
     uint64_t l = 0, h = WORD_SIZE;
@@ -308,6 +308,7 @@ uint64_t compress(char *ifile, char *ofile, int shape, uint64_t delta) {
 
     compressed.flush();
     fclose(ifp);
+    printf("Compressed len = %ld\n", compressed.compressed_len);
     return compressed.compressed_len;
 }
 
@@ -327,7 +328,7 @@ void compress_ppm(char *ifile, char *ofile){
     }
     for (uint64_t delta = min_cl_delta; delta <= 268435456lu; delta *= 2){
         uint64_t cl = compress(ifile, ofile, min_cl_shape, delta);
-        if (cl >= min_cl) break;
+        if (cl > min_cl) break;
         min_cl = cl;
         min_cl_delta = delta;
     }
