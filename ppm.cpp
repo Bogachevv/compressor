@@ -21,7 +21,7 @@ namespace ppm{
         FILE* fd;
         uint8_t buf;
         int buf_size;
-        uint64_t file_len;
+        uint64_t file_len, compressed_len;
         void **table;
         int model_shape;
         int *prev_ch_seq;
@@ -29,27 +29,36 @@ namespace ppm{
         bool is_open;
         bool mode; //true if open in write mode
         uint64_t delta;
+        uint64_t available_memory;
 #define READ_M false
 #define WRITE_M true
 
-        explicit compressed_file(char* path, int model_shape) :
-                buf(0), file_len(0), buf_size(0), is_open(false), mode(false), fd(nullptr), delta(1), model_shape(model_shape)
+        explicit compressed_file(char* path, int model_shape, uint64_t available_memory = UINT64_MAX) :
+                buf(0), file_len(0), buf_size(0), is_open(false), mode(false), fd(nullptr),
+                delta(1), model_shape(model_shape), available_memory(available_memory)
         {
             this->path = static_cast<char *>(malloc(strlen(path) + 1));
             strcpy(this->path, path);
             table = nullptr;
             prev_ch_seq = new int[model_shape];
             for (int i = 0; i < model_shape; ++i) prev_ch_seq[i] = 0;
+            compressed_len = 0;
         }
 
         void init_dynamic_table(uint64_t initial_val){
             if (model_shape == 0){
+                int64_t table_size = sizeof(uint64_t) * (MAX_BYTE + 1);
+                if (available_memory < table_size) throw std::runtime_error("Compressed file: not enough memory");
+                available_memory -= table_size;
                 auto tmp_ptr = new uint64_t[MAX_BYTE + 1];
                 tmp_ptr[0] = initial_val;
                 for (int i = 1; i <= MAX_BYTE; ++i) tmp_ptr[i] = tmp_ptr[i - 1] + initial_val;
                 this->table = (void**)tmp_ptr;
                 return;
             }
+            int64_t table_size = sizeof(void*) * (MAX_BYTE + 1);
+            if (available_memory < table_size) throw std::runtime_error("Compressed file: not enough memory");
+            available_memory -= table_size;
             this->table = new void*[MAX_BYTE + 1];
             for (int i = 0; i <= MAX_BYTE; ++i) table[i] = nullptr;
         }
@@ -67,6 +76,9 @@ namespace ppm{
             for (int i = 0; i < model_shape - 1; ++i){
                 if (table_ptr[prev_ch_seq[i]] == nullptr){
                     //init_pointer_table
+                    int64_t table_size = sizeof(void*) * (MAX_BYTE + 1);
+                    if (available_memory < table_size) throw std::runtime_error("Compressed file: not enough memory");
+                    available_memory -= table_size;
                     table_ptr[prev_ch_seq[i]] = new void*[MAX_BYTE+1];
                     void** tmp_ptr = (void**)table_ptr[prev_ch_seq[i]];
                     for (int j = 0; j <= MAX_BYTE; ++j) tmp_ptr[j] = nullptr;
@@ -76,6 +88,9 @@ namespace ppm{
 
             if (table_ptr[prev_ch_seq[model_shape - 1]] == nullptr){
                 //init_int64_table
+                int64_t table_size = sizeof(uint64_t) * (MAX_BYTE + 1);
+                if (available_memory < table_size) throw std::runtime_error("Compressed file: not enough memory");
+                available_memory -= table_size;
                 auto tmp_ptr = new uint64_t[MAX_BYTE+1];
                 const int initial_val = 2;
                 tmp_ptr[0] = initial_val;
@@ -102,10 +117,15 @@ namespace ppm{
 
         void write_header(){
             fwrite(&file_len, sizeof(file_len), 1, fd);
+            fwrite(&delta, sizeof(delta), 1, fd);
+            fwrite(&model_shape, sizeof(model_shape), 1, fd);
+            compressed_len += sizeof(file_len) + sizeof(delta) + sizeof(model_shape);
         }
 
         void read_header(){
             fread(&file_len, 8, 1, fd);
+            fread(&delta, sizeof(delta), 1, fd);
+            fread(&model_shape, sizeof(model_shape), 1, fd);
         }
 
         void open_to_read(){
@@ -133,6 +153,7 @@ namespace ppm{
             fwrite(&buf, sizeof(buf), 1, fd);
             buf = 0;
             buf_size = 0;
+            ++compressed_len;
         }
 
         int read_bit(){
@@ -225,13 +246,17 @@ namespace ppm{
     }
 }
 
-void compress_ppm(char *ifile, char *ofile) {
+uint64_t compress(char *ifile, char *ofile, int shape, uint64_t delta) {
     FILE *ifp = (FILE *)fopen(ifile, "rb");
-    auto compressed = ppm::compressed_file(ofile, SHAPE);
-    compressed.delta = DELTA;
+    auto compressed = ppm::compressed_file(ofile, shape, 1800 * 1024 * 1024lu);
+    compressed.delta = delta;
     compressed.open_to_write();
     compressed.init_dynamic_table(2);
     compressed.file_len = ppm::get_file_size(ifile);
+    if (compressed.file_len == 0){
+        printf("Empty file\n");
+        return 0;
+    }
     printf("Delta: %d\n", DELTA);
     printf("File len = %ld\n", compressed.file_len);
     compressed.write_header();
@@ -282,6 +307,12 @@ void compress_ppm(char *ifile, char *ofile) {
 
     compressed.flush();
     fclose(ifp);
+    return compressed.compressed_len;
+}
+
+void compress_ppm(char *ifile, char *ofile){
+    uint64_t cl = compress(ifile, ofile, SHAPE, DELTA);
+    printf("Compressed len = %ld\n", cl);
 }
 
 void decompress_ppm(char *ifile, char *ofile) {
@@ -292,6 +323,11 @@ void decompress_ppm(char *ifile, char *ofile) {
     compressed.delta = DELTA;
     compressed.init_dynamic_table(2);
     uint64_t file_len = compressed.file_len;
+    if (compressed.file_len == 0){
+        printf("Empty file\n");
+        fclose(ofp);
+        return;
+    }
 
     printf("File len = %ld\n", file_len);
 

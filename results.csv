@@ -6,10 +6,10 @@ ari;test_4;0;8;OK
 ari;test_5;1000000;433685;OK
 ari;test_6;1000000;10;OK
 ari;test_7;1000000;228221;OK
-ppm;test_1;13;26;OK
-ppm;test_2;13095;7637;OK
-ppm;test_3;226304;174922;OK
-ppm;test_4;0;12;OK
-ppm;test_5;1000000;24;OK
-ppm;test_6;1000000;14;OK
-ppm;test_7;1000000;5284;OK
+ppm;test_1;13;34;OK
+ppm;test_2;13095;13288;OK
+ppm;test_3;226304;197197;OK
+ppm;test_4;0;0;OK
+ppm;test_5;1000000;38;OK
+ppm;test_6;1000000;29;OK
+ppm;test_7;1000000;8601;OK
