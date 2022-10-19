@@ -38,30 +38,33 @@ def mean_compression(delta: int, files) -> float:
 
 
 def main():
-    min_delta_pow = 6
-    max_delta_pow = 26
-    deltas = np.logspace(min_delta_pow, max_delta_pow, num=7, base=2, dtype=int)
-    x = np.linspace(0, 8, num=7, dtype=int)
+    os.chdir("../build")
+    min_delta_pow = 4
+    max_delta_pow = 28
+    min_shape = 0
+    max_shape = 7
+    deltas = np.linspace(min_delta_pow, max_delta_pow, num=max_delta_pow - min_delta_pow + 1, dtype=int)
+    shapes = np.linspace(min_shape, max_shape, num=max_shape - min_shape + 1, dtype=int)
+    fname = "war_and_peace.txt"
+    path = f'./logs/{fname}.log'
+    X, Y = np.meshgrid(deltas, shapes)
+    with open(path, "r") as f:
+        Z = []
+        for line in f.readlines():
+            Z += list(map(float, line.strip().split('\t')))
+        print(f"min={min(Z):.8f}")
+        print(f"max={max(Z):.8f}")
+        Z = np.array(Z).reshape(len(shapes), len(deltas))
+    print(Z)
 
-    files = [f'../public_tests/0{i}_test_file_input/test_{i+1}' for i in range(1, 7) if i != 3]
-    files += ['./war_and_peace.txt', 'idiot.txt']
-    # path = f'../public_tests/0{6}_test_file_input/test_{7}'
-    colors = ['r', 'g', 'b', 'k', 'm', 'y', 'c']
-    # delta = 2 ** 18
-    for path in files:
-        print(f"Testing file {path}")
-        for i, delta in enumerate(deltas):
-            y = np.array([calc_compression(delta, 2, shape, path) for shape in x], dtype=float)
-            print(*zip(x, y), sep='\n')
-            # plt.ylim(min_y - 0.1, max_y + 0.1)
-            plt.xlabel("Shape")
-            plt.ylabel("Compression")
-            # plt.xscale("log", base=2)
-            plt.xscale("linear")
-            plt.yscale("linear")
-            plt.title(f"{path}")
-            plt.plot(x, y, colors[i])
-        plt.show()
+
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    # ax.set_zlim(0, 0.0002000)
+    ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap='viridis', edgecolor='none')
+    ax.set_xlabel("delta")
+    ax.set_ylabel("shape")
+    plt.show()
 
 
 if __name__ == '__main__':

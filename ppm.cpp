@@ -6,15 +6,15 @@
 #include <cstdint>
 
 #include "ppm.h"
-//#include "settings.h"  // DELETE before send
+#include "settings.h"  // DELETE before send
 
 #define MAX_BYTE 255
 #define WORD_SIZE 4294967295
 //#define WORD_SIZE 65535
 #define MAX_PARITY 2147483648
-#define MIN_PARITY 2
-#define DELTA 2097152
-#define SHAPE 2
+//#define MIN_PARITY 2
+//#define DELTA 2097152
+//#define SHAPE 2
 
 namespace ppm{
     struct compressed_file{
